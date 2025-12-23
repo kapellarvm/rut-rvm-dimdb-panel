@@ -1,0 +1,100 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  VIEWER
+}
+
+enum DimDbStatus {
+  AVAILABLE
+  ASSIGNED
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  name         String
+  role         UserRole  @default(VIEWER)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  lastLogin    DateTime? @map("last_login")
+
+  activityLogs ActivityLog[]
+
+  @@map("users")
+}
+
+model Router {
+  id             String   @id @default(cuid())
+  boxNoPrefix    String?  @map("box_no_prefix")
+  boxNo          String   @map("box_no")
+  serialNumber   String   @unique @map("serial_number")
+  imei           String   @unique
+  macAddress     String   @map("mac_address")
+  firmware       String?
+  ssid           String?
+  wifiPassword   String?  @map("wifi_password")
+  devicePassword String?  @map("device_password")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  importedAt     DateTime @default(now()) @map("imported_at")
+
+  rvmUnit   RvmUnit? @relation(fields: [rvmUnitId], references: [id])
+  rvmUnitId String?  @map("rvm_unit_id")
+
+  dimDb   DimDb?  @relation(fields: [dimDbId], references: [id])
+  dimDbId String? @map("dimdb_id")
+
+  @@map("routers")
+}
+
+model RvmUnit {
+  id        String   @id @default(cuid())
+  rvmId     String   @unique @map("rvm_id")
+  name      String?
+  location  String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  routers Router[]
+
+  @@map("rvm_units")
+}
+
+model DimDb {
+  id          String       @id @default(cuid())
+  dimDbCode   String       @unique @map("dimdb_code")
+  description String?
+  status      DimDbStatus  @default(AVAILABLE)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  routers Router[]
+
+  @@map("dimdb_list")
+}
+
+model ActivityLog {
+  id         String   @id @default(cuid())
+  action     String
+  entityType String   @map("entity_type")
+  entityId   String?  @map("entity_id")
+  details    Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String @map("user_id")
+
+  @@map("activity_logs")
+}
