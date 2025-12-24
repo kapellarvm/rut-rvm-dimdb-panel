@@ -109,7 +109,7 @@ export function Sidebar() {
       {/* Mobile menu button */}
       <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between border-b border-[var(--border)] bg-[var(--background)]/95 backdrop-blur-md px-4 py-3 lg:hidden">
         <div className="flex items-center gap-2.5">
-          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-[var(--primary)] to-purple-500 flex items-center justify-center shadow-lg shadow-[var(--primary)]/20">
+          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-[var(--primary)] to-orange-600 flex items-center justify-center shadow-lg shadow-[var(--primary)]/20">
             <span className="font-bold text-white text-sm">K</span>
           </div>
           <span className="font-bold text-lg bg-gradient-to-r from-[var(--foreground)] to-[var(--muted-foreground)] bg-clip-text text-transparent">Kapellar</span>
@@ -145,7 +145,7 @@ export function Sidebar() {
       {/* Desktop sidebar */}
       <aside className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:flex lg:w-72 lg:flex-col border-r border-[var(--border)] bg-gradient-to-b from-[var(--sidebar)] to-[var(--background)]">
         <div className="flex h-16 items-center gap-3 border-b border-[var(--border)] px-6">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[var(--primary)] to-purple-500 flex items-center justify-center shadow-lg shadow-[var(--primary)]/25">
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[var(--primary)] to-orange-600 flex items-center justify-center shadow-lg shadow-[var(--primary)]/25">
             <span className="font-bold text-white text-lg">K</span>
           </div>
           <div className="flex flex-col">

@@ -74,13 +74,13 @@ export default function LoginPage() {
       {/* Background gradient effects */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-[40%] -left-[20%] w-[80%] h-[80%] rounded-full bg-[var(--primary)]/5 blur-3xl" />
-        <div className="absolute -bottom-[40%] -right-[20%] w-[80%] h-[80%] rounded-full bg-purple-500/5 blur-3xl" />
+        <div className="absolute -bottom-[40%] -right-[20%] w-[80%] h-[80%] rounded-full bg-orange-500/5 blur-3xl" />
       </div>
 
       <div className="w-full max-w-md relative z-10">
         {/* Logo */}
         <div className="flex flex-col items-center mb-10">
-          <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-[var(--primary)] to-purple-500 flex items-center justify-center mb-5 shadow-2xl shadow-[var(--primary)]/30">
+          <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-[var(--primary)] to-orange-600 flex items-center justify-center mb-5 shadow-2xl shadow-[var(--primary)]/30">
             <span className="font-bold text-white text-3xl">K</span>
           </div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-[var(--foreground)] via-[var(--foreground)] to-[var(--muted-foreground)] bg-clip-text text-transparent">
@@ -150,7 +150,7 @@ export default function LoginPage() {
 
               <Button
                 type="submit"
-                className="w-full h-11 bg-gradient-to-r from-[var(--primary)] to-purple-500 hover:opacity-90 transition-opacity shadow-lg shadow-[var(--primary)]/25"
+                className="w-full h-11 bg-gradient-to-r from-[var(--primary)] to-orange-600 hover:opacity-90 transition-opacity shadow-lg shadow-[var(--primary)]/25"
                 disabled={isLoading}
               >
                 {isLoading ? (

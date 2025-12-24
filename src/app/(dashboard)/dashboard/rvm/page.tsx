@@ -15,8 +15,7 @@ import {
   Filter,
   X,
   Database,
-  Loader2,
-  Sparkles,
+  Download,
 } from "lucide-react"
 import { PageHeader } from "@/components/shared/page-header"
 import { Button } from "@/components/ui/button"
@@ -50,6 +49,7 @@ import { CopyButton } from "@/components/shared/copy-button"
 import { toast } from "@/hooks/use-toast"
 import { formatMacAddress, formatMonth, parseRvmId } from "@/lib/utils"
 import type { RvmUnit, Router as RouterType, DimDb } from "@/types"
+import * as XLSX from "xlsx"
 
 interface RvmWithRouters extends RvmUnit {
   routers: (RouterType & { dimDb: DimDb | null })[]
@@ -210,38 +210,6 @@ export default function RvmPage() {
     },
   })
 
-  // Auto-create DIM-DB mutation
-  const autoDimDbMutation = useMutation({
-    mutationFn: async (rvmId: string) => {
-      const res = await fetch(`/api/rvm/${rvmId}/auto-dimdb`, {
-        method: "POST",
-      })
-      if (!res.ok) throw new Error("Failed to auto-create DIM-DB")
-      return res.json()
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["rvm-units"] })
-      toast({
-        title: "Başarılı",
-        description: data.message || `${data.assigned} router için DIM-DB oluşturuldu.`,
-        variant: "success",
-      })
-      // Refresh selected RVM data
-      if (selectedRvm) {
-        fetch(`/api/rvm/${selectedRvm.id}?includeRouters=true`)
-          .then((res) => res.json())
-          .then((data) => setSelectedRvm(data))
-      }
-    },
-    onError: () => {
-      toast({
-        title: "Hata",
-        description: "DIM-DB oluşturulamadı.",
-        variant: "destructive",
-      })
-    },
-  })
-
   const handleCreate = () => {
     if (!newRvmId) return
     createMutation.mutate({
@@ -267,18 +235,108 @@ export default function RvmPage() {
     })
   }
 
+  const handleExport = () => {
+    if (!rvmUnits || rvmUnits.length === 0) {
+      toast({
+        title: "Uyarı",
+        description: "Dışa aktarılacak veri bulunamadı.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Prepare data for export
+    const exportData: Record<string, unknown>[] = []
+
+    rvmUnits.forEach((rvm) => {
+      if (rvm.routers.length === 0) {
+        // RVM without routers
+        exportData.push({
+          "RVM ID": rvm.rvmId,
+          "RVM Adı": rvm.name || "",
+          "Konum": rvm.location || "",
+          "Router Box No": "",
+          "Seri No": "",
+          "IMEI": "",
+          "MAC Adresi": "",
+          "SSID": "",
+          "WiFi Şifre": "",
+          "Panel Şifre": "",
+          "DIM-DB Kodu": "",
+        })
+      } else {
+        // RVM with routers
+        rvm.routers.forEach((router) => {
+          exportData.push({
+            "RVM ID": rvm.rvmId,
+            "RVM Adı": rvm.name || "",
+            "Konum": rvm.location || "",
+            "Router Box No": router.boxNo,
+            "Seri No": router.serialNumber,
+            "IMEI": router.imei,
+            "MAC Adresi": router.macAddress,
+            "SSID": router.ssid || "",
+            "WiFi Şifre": router.wifiPassword || "",
+            "Panel Şifre": router.devicePassword || "",
+            "DIM-DB Kodu": router.dimDb?.dimDbCode || "",
+          })
+        })
+      }
+    })
+
+    // Create workbook and worksheet
+    const wb = XLSX.utils.book_new()
+    const ws = XLSX.utils.json_to_sheet(exportData)
+
+    // Set column widths
+    ws["!cols"] = [
+      { wch: 15 }, // RVM ID
+      { wch: 20 }, // RVM Adı
+      { wch: 15 }, // Konum
+      { wch: 12 }, // Router Box No
+      { wch: 15 }, // Seri No
+      { wch: 18 }, // IMEI
+      { wch: 18 }, // MAC Adresi
+      { wch: 15 }, // SSID
+      { wch: 15 }, // WiFi Şifre
+      { wch: 15 }, // Panel Şifre
+      { wch: 20 }, // DIM-DB Kodu
+    ]
+
+    XLSX.utils.book_append_sheet(wb, ws, "RVM Verileri")
+
+    // Generate filename with date
+    const date = new Date().toISOString().split("T")[0]
+    const filename = `RVM_Export_${date}.xlsx`
+
+    // Download
+    XLSX.writeFile(wb, filename)
+
+    toast({
+      title: "Başarılı",
+      description: `${exportData.length} satır dışa aktarıldı.`,
+      variant: "success",
+    })
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="RVM Birimleri"
         description="RVM birimlerini ve bağlı router'ları görüntüleyin"
       >
-        {isAdmin && (
-          <Button onClick={() => setCreateDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Yeni RVM
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExport} disabled={!rvmUnits || rvmUnits.length === 0}>
+            <Download className="mr-2 h-4 w-4" />
+            Excel Export
           </Button>
-        )}
+          {isAdmin && (
+            <Button onClick={() => setCreateDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Yeni RVM
+            </Button>
+          )}
+        </div>
       </PageHeader>
 
       {/* Search and Filters */}
@@ -558,40 +616,6 @@ export default function RvmPage() {
                   </div>
                 </Card>
               </div>
-
-              {/* Auto-create DIM-DB Button */}
-              {isAdmin && selectedRvm.routers.filter((r) => !r.dimDb).length > 0 && (
-                <Card className="p-4 border-dashed border-2 border-[var(--primary)]/30 bg-[var(--primary)]/5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Sparkles className="h-5 w-5 text-[var(--primary)]" />
-                      <div>
-                        <p className="font-medium">Otomatik DIM-DB Oluştur</p>
-                        <p className="text-sm text-[var(--muted-foreground)]">
-                          {selectedRvm.routers.filter((r) => !r.dimDb).length} bekleyen router için otomatik DIM-DB oluştur ve eşleştir
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      onClick={() => autoDimDbMutation.mutate(selectedRvm.id)}
-                      disabled={autoDimDbMutation.isPending}
-                      className="bg-[var(--primary)] hover:bg-[var(--primary-hover)]"
-                    >
-                      {autoDimDbMutation.isPending ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Oluşturuluyor...
-                        </>
-                      ) : (
-                        <>
-                          <Database className="mr-2 h-4 w-4" />
-                          Oluştur
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </Card>
-              )}
 
               {/* DIM-DB List */}
               {selectedRvm.routers.filter((r) => r.dimDb).length > 0 && (

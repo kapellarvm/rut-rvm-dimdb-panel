@@ -2,34 +2,34 @@
 
 /* Premium Soft Dark Theme - Kapellar */
 :root {
-  /* Base colors - Soft dark, not pure black */
-  --background: #0f0f11;
+  /* Base colors - Softer dark, better contrast */
+  --background: #1a1a1f;
   --foreground: #f4f4f5;
 
-  /* Card and surface colors - Elevated with subtle transparency */
-  --card: #18181b;
+  /* Card and surface colors - Better contrast with background */
+  --card: #252529;
   --card-foreground: #f4f4f5;
-  --card-elevated: #1f1f23;
+  --card-elevated: #2a2a30;
 
   /* Popover */
-  --popover: #1c1c20;
+  --popover: #252529;
   --popover-foreground: #f4f4f5;
 
-  /* Primary - Premium indigo/violet */
-  --primary: #6366f1;
+  /* Primary - Orange theme */
+  --primary: #f97316;
   --primary-foreground: #ffffff;
-  --primary-hover: #818cf8;
+  --primary-hover: #fb923c;
 
   /* Secondary */
-  --secondary: #27272a;
+  --secondary: #2f2f35;
   --secondary-foreground: #f4f4f5;
 
   /* Muted */
-  --muted: #3f3f46;
+  --muted: #45454d;
   --muted-foreground: #a1a1aa;
 
-  /* Accent - Subtle purple glow */
-  --accent: #2d2d35;
+  /* Accent */
+  --accent: #35353d;
   --accent-foreground: #f4f4f5;
 
   /* Destructive */
@@ -48,28 +48,28 @@
   --info: #3b82f6;
   --info-foreground: #ffffff;
 
-  /* Border - Subtle */
-  --border: #27272a;
-  --border-light: #3f3f46;
-  --input: #27272a;
-  --ring: #6366f1;
+  /* Border - Better visibility */
+  --border: #35353d;
+  --border-light: #45454d;
+  --input: #2f2f35;
+  --ring: #f97316;
 
   /* Radius */
   --radius: 0.75rem;
 
   /* Sidebar */
-  --sidebar: #131316;
+  --sidebar: #1e1e23;
   --sidebar-foreground: #f4f4f5;
-  --sidebar-border: #27272a;
-  --sidebar-accent: #1f1f23;
+  --sidebar-border: #35353d;
+  --sidebar-accent: #2a2a30;
   --sidebar-accent-foreground: #f4f4f5;
-  --sidebar-primary: #6366f1;
+  --sidebar-primary: #f97316;
   --sidebar-primary-foreground: #ffffff;
 
-  /* Gradients */
-  --gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
-  --gradient-card: linear-gradient(145deg, rgba(39, 39, 42, 0.5) 0%, rgba(24, 24, 27, 0.8) 100%);
-  --gradient-glow: radial-gradient(ellipse at top, rgba(99, 102, 241, 0.15) 0%, transparent 50%);
+  /* Gradients - Orange theme */
+  --gradient-primary: linear-gradient(135deg, #f97316 0%, #ea580c 50%, #c2410c 100%);
+  --gradient-card: linear-gradient(145deg, rgba(47, 47, 53, 0.5) 0%, rgba(37, 37, 41, 0.8) 100%);
+  --gradient-glow: radial-gradient(ellipse at top, rgba(249, 115, 22, 0.12) 0%, transparent 50%);
 }
 
 @theme inline {
