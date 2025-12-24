@@ -71,6 +71,7 @@ export default function RvmPage() {
   const [machineClass, setMachineClass] = useState("")
   const [year, setYear] = useState("")
   const [month, setMonth] = useState("")
+  const [dimDbStatus, setDimDbStatus] = useState("")
   const [selectedRvm, setSelectedRvm] = useState<RvmWithRouters | null>(null)
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
@@ -113,13 +114,32 @@ export default function RvmPage() {
     },
   })
 
-  const hasActiveFilters = effectiveMachineClass || effectiveYear || effectiveMonth
+  const hasActiveFilters = effectiveMachineClass || effectiveYear || effectiveMonth || dimDbStatus
 
   const clearFilters = () => {
     setMachineClass("")
     setYear("")
     setMonth("")
+    setDimDbStatus("")
   }
+
+  // Filter RVM units by DIM-DB status (client-side)
+  const filteredRvmUnits = rvmUnits?.filter((rvm) => {
+    if (!dimDbStatus) return true
+
+    const hasUnassignedRouters = rvm.routers.some((r) => !r.dimDb)
+    const hasAssignedRouters = rvm.routers.some((r) => r.dimDb)
+
+    if (dimDbStatus === "unassigned") {
+      // Show RVMs that have at least one router without DIM-DB
+      return hasUnassignedRouters
+    }
+    if (dimDbStatus === "assigned") {
+      // Show RVMs where all routers have DIM-DB
+      return rvm.routers.length > 0 && !hasUnassignedRouters
+    }
+    return true
+  })
 
   // Create RVM mutation
   const createMutation = useMutation({
@@ -236,7 +256,7 @@ export default function RvmPage() {
   }
 
   const handleExport = () => {
-    if (!rvmUnits || rvmUnits.length === 0) {
+    if (!filteredRvmUnits || filteredRvmUnits.length === 0) {
       toast({
         title: "Uyarı",
         description: "Dışa aktarılacak veri bulunamadı.",
@@ -248,7 +268,7 @@ export default function RvmPage() {
     // Prepare data for export
     const exportData: Record<string, unknown>[] = []
 
-    rvmUnits.forEach((rvm) => {
+    filteredRvmUnits.forEach((rvm) => {
       if (rvm.routers.length === 0) {
         // RVM without routers
         exportData.push({
@@ -326,7 +346,7 @@ export default function RvmPage() {
         description="RVM birimlerini ve bağlı router'ları görüntüleyin"
       >
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleExport} disabled={!rvmUnits || rvmUnits.length === 0}>
+          <Button variant="outline" onClick={handleExport} disabled={!filteredRvmUnits || filteredRvmUnits.length === 0}>
             <Download className="mr-2 h-4 w-4" />
             Excel Export
           </Button>
@@ -402,6 +422,17 @@ export default function RvmPage() {
               </SelectContent>
             </Select>
 
+            <Select value={dimDbStatus} onValueChange={setDimDbStatus}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="DIM-DB Durumu" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">Tümü</SelectItem>
+                <SelectItem value="unassigned">DIM-DB Eksik</SelectItem>
+                <SelectItem value="assigned">DIM-DB Tam</SelectItem>
+              </SelectContent>
+            </Select>
+
             {hasActiveFilters && (
               <Button
                 variant="ghost"
@@ -428,6 +459,11 @@ export default function RvmPage() {
               {effectiveMonth && (
                 <Badge variant="secondary">Ay: {formatMonth(effectiveMonth)}</Badge>
               )}
+              {dimDbStatus && (
+                <Badge variant={dimDbStatus === "unassigned" ? "warning" : "success"}>
+                  {dimDbStatus === "unassigned" ? "DIM-DB Eksik" : "DIM-DB Tam"}
+                </Badge>
+              )}
             </div>
           )}
         </div>
@@ -442,12 +478,12 @@ export default function RvmPage() {
               <Skeleton className="h-4 w-24" />
             </Card>
           ))
-        ) : rvmUnits?.length === 0 ? (
+        ) : filteredRvmUnits?.length === 0 ? (
           <div className="col-span-full text-center py-12 text-[var(--muted-foreground)]">
             RVM birimi bulunamadı
           </div>
         ) : (
-          rvmUnits?.map((rvm) => (
+          filteredRvmUnits?.map((rvm) => (
             <Card
               key={rvm.id}
               className="hover-lift cursor-pointer"
@@ -455,8 +491,8 @@ export default function RvmPage() {
             >
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                    <Server className="h-5 w-5 text-purple-500" />
+                  <div className="h-10 w-10 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                    <Server className="h-5 w-5 text-orange-500" />
                   </div>
                   <div>
                     <CardTitle className="text-lg">{rvm.rvmId}</CardTitle>
@@ -569,7 +605,7 @@ export default function RvmPage() {
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Server className="h-5 w-5 text-purple-500" />
+              <Server className="h-5 w-5 text-orange-500" />
               {selectedRvm?.rvmId}
             </DialogTitle>
             <DialogDescription>
