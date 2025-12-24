@@ -152,22 +152,6 @@ export default function LoginPage() {
           </CardContent>
         </Card>
 
-        {/* Demo credentials info */}
-        <div className="mt-6 p-4 rounded-xl bg-[var(--card)] border border-[var(--border)]">
-          <p className="text-xs text-[var(--muted-foreground)] text-center mb-2">
-            Demo Hesap Bilgileri
-          </p>
-          <div className="space-y-1 text-xs text-center">
-            <p>
-              <span className="text-[var(--muted-foreground)]">Admin:</span>{" "}
-              <span className="font-mono">admin@rutpanel.com</span>
-            </p>
-            <p>
-              <span className="text-[var(--muted-foreground)]">Şifre:</span>{" "}
-              <span className="font-mono">admin123</span>
-            </p>
-          </div>
-        </div>
       </div>
     </div>
   )
