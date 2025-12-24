@@ -490,7 +490,21 @@ export default function RvmPage() {
                               </div>
                               <div className="flex items-center gap-2">
                                 <span className="text-[var(--muted-foreground)]">
-                                  WiFi:
+                                  SSID:
+                                </span>
+                                <span className="font-mono">
+                                  {router.ssid || "-"}
+                                </span>
+                                {router.ssid && (
+                                  <CopyButton
+                                    value={router.ssid}
+                                    label="SSID"
+                                  />
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-[var(--muted-foreground)]">
+                                  WiFi Şifre:
                                 </span>
                                 {router.wifiPassword ? (
                                   <PasswordField
