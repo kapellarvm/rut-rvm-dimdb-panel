@@ -309,6 +309,7 @@ export default function ImportPage() {
               <CardTitle>Kolon Eşleştirmeleri</CardTitle>
             </CardHeader>
             <CardContent>
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -351,6 +352,7 @@ export default function ImportPage() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             </CardContent>
           </Card>
 
@@ -381,6 +383,7 @@ export default function ImportPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
+                <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -399,6 +402,7 @@ export default function ImportPage() {
                     ))}
                   </TableBody>
                 </Table>
+                </div>
               </CardContent>
             </Card>
           )}

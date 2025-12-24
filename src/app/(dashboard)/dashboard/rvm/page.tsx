@@ -374,71 +374,73 @@ export default function RvmPage() {
           </div>
 
           {/* Smart Filters */}
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3">
             <div className="flex items-center gap-2 text-sm text-[var(--muted-foreground)]">
               <Filter className="h-4 w-4" />
               <span>Akıllı Filtreler:</span>
             </div>
 
-            <Select value={machineClass} onValueChange={setMachineClass}>
-              <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder="Makine Sınıfı" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__all__">Tüm Sınıflar</SelectItem>
-                {filterOptions?.machineClasses.map((cls) => (
-                  <SelectItem key={cls} value={cls}>
-                    Sınıf {cls}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 w-full sm:w-auto">
+              <Select value={machineClass} onValueChange={setMachineClass}>
+                <SelectTrigger className="w-full sm:w-[140px]">
+                  <SelectValue placeholder="Makine Sınıfı" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Tüm Sınıflar</SelectItem>
+                  {filterOptions?.machineClasses.map((cls) => (
+                    <SelectItem key={cls} value={cls}>
+                      Sınıf {cls}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-            <Select value={year} onValueChange={setYear}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Yıl" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__all__">Tüm Yıllar</SelectItem>
-                {filterOptions?.years.map((y) => (
-                  <SelectItem key={y} value={y}>
-                    20{y}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <Select value={year} onValueChange={setYear}>
+                <SelectTrigger className="w-full sm:w-[120px]">
+                  <SelectValue placeholder="Yıl" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Tüm Yıllar</SelectItem>
+                  {filterOptions?.years.map((y) => (
+                    <SelectItem key={y} value={y}>
+                      20{y}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-            <Select value={month} onValueChange={setMonth}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Ay" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__all__">Tüm Aylar</SelectItem>
-                {filterOptions?.months.map((m) => (
-                  <SelectItem key={m} value={m}>
-                    {formatMonth(m)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <Select value={month} onValueChange={setMonth}>
+                <SelectTrigger className="w-full sm:w-[120px]">
+                  <SelectValue placeholder="Ay" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Tüm Aylar</SelectItem>
+                  {filterOptions?.months.map((m) => (
+                    <SelectItem key={m} value={m}>
+                      {formatMonth(m)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-            <Select value={dimDbStatus} onValueChange={setDimDbStatus}>
-              <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder="DIM-DB Durumu" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__all__">Tümü</SelectItem>
-                <SelectItem value="unassigned">DIM-DB Eksik</SelectItem>
-                <SelectItem value="assigned">DIM-DB Tam</SelectItem>
-              </SelectContent>
-            </Select>
+              <Select value={dimDbStatus} onValueChange={setDimDbStatus}>
+                <SelectTrigger className="w-full sm:w-[140px]">
+                  <SelectValue placeholder="DIM-DB Durumu" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Tümü</SelectItem>
+                  <SelectItem value="unassigned">DIM-DB Eksik</SelectItem>
+                  <SelectItem value="assigned">DIM-DB Tam</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
             {hasActiveFilters && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={clearFilters}
-                className="text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] w-full sm:w-auto"
               >
                 <X className="h-4 w-4 mr-1" />
                 Filtreleri Temizle
@@ -602,7 +604,7 @@ export default function RvmPage() {
         open={!!selectedRvm}
         onOpenChange={(open) => !open && setSelectedRvm(null)}
       >
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl w-full max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Server className="h-5 w-5 text-orange-500" />
@@ -617,7 +619,7 @@ export default function RvmPage() {
           {selectedRvm && (
             <div className="space-y-6">
               {/* Summary Stats */}
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                 <Card className="p-4 bg-[var(--secondary)]/50">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
@@ -660,7 +662,7 @@ export default function RvmPage() {
                     <Database className="h-4 w-4 text-green-500" />
                     Bağlı DIM-DB&apos;ler
                   </h4>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {selectedRvm.routers
                       .filter((r) => r.dimDb)
                       .map((router) => (
@@ -703,7 +705,7 @@ export default function RvmPage() {
                                 <Badge variant="warning">Atanmamış</Badge>
                               )}
                             </div>
-                            <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-sm">
                               <div className="flex items-center gap-2">
                                 <span className="text-[var(--muted-foreground)]">
                                   S/N:

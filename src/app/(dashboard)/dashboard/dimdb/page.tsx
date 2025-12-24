@@ -273,6 +273,7 @@ export default function DimDbPage() {
 
       {/* Table */}
       <Card>
+        <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -363,6 +364,7 @@ export default function DimDbPage() {
             )}
           </TableBody>
         </Table>
+        </div>
       </Card>
 
       {/* Create Dialog */}

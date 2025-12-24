@@ -251,6 +251,7 @@ export default function UsersPage() {
 
       {/* Users Table */}
       <Card>
+        <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -287,36 +288,36 @@ export default function UsersPage() {
                 <TableRow key={user.id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
-                      <div className="h-9 w-9 rounded-full bg-[var(--primary)]/10 flex items-center justify-center">
+                      <div className="h-9 w-9 rounded-full bg-[var(--primary)]/10 flex items-center justify-center shrink-0">
                         <span className="text-[var(--primary)] font-medium">
                           {user.name.charAt(0).toUpperCase()}
                         </span>
                       </div>
-                      <span className="font-medium">{user.name}</span>
+                      <span className="font-medium whitespace-nowrap">{user.name}</span>
                     </div>
                   </TableCell>
-                  <TableCell>{user.email}</TableCell>
+                  <TableCell className="whitespace-nowrap">{user.email}</TableCell>
                   <TableCell>
                     {user.role === "SUPER_ADMIN" ? (
-                      <Badge className="flex items-center gap-1 w-fit">
+                      <Badge className="flex items-center gap-1 w-fit whitespace-nowrap">
                         <Shield className="h-3 w-3" />
                         Süper Admin
                       </Badge>
                     ) : (
-                      <Badge variant="secondary" className="flex items-center gap-1 w-fit">
+                      <Badge variant="secondary" className="flex items-center gap-1 w-fit whitespace-nowrap">
                         <Eye className="h-3 w-3" />
                         İzleyici
                       </Badge>
                     )}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="whitespace-nowrap">
                     {user.lastLogin ? (
                       formatDate(user.lastLogin)
                     ) : (
                       <span className="text-[var(--muted-foreground)]">-</span>
                     )}
                   </TableCell>
-                  <TableCell>{formatDate(user.createdAt)}</TableCell>
+                  <TableCell className="whitespace-nowrap">{formatDate(user.createdAt)}</TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -354,6 +355,7 @@ export default function UsersPage() {
             )}
           </TableBody>
         </Table>
+        </div>
       </Card>
 
       {/* Create/Edit Dialog */}
