@@ -12,10 +12,10 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: "RUT-RVM Panel | Router & DIM-DB Yönetimi",
+  title: "Kapellar | RVM Yönetim Paneli",
   description: "Router, RVM ve DIM-DB yönetim paneli",
   icons: {
-    icon: "/favicon.ico",
+    icon: "/icon.svg",
   },
 }
 

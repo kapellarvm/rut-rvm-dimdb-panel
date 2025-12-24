@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Server, Loader2, Eye, EyeOff } from "lucide-react"
+import { Loader2, Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -70,29 +70,37 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--background)] p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-[var(--background)] p-4 relative overflow-hidden">
+      {/* Background gradient effects */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-[40%] -left-[20%] w-[80%] h-[80%] rounded-full bg-[var(--primary)]/5 blur-3xl" />
+        <div className="absolute -bottom-[40%] -right-[20%] w-[80%] h-[80%] rounded-full bg-purple-500/5 blur-3xl" />
+      </div>
+
+      <div className="w-full max-w-md relative z-10">
         {/* Logo */}
-        <div className="flex flex-col items-center mb-8">
-          <div className="h-16 w-16 rounded-2xl bg-[var(--primary)] flex items-center justify-center mb-4">
-            <Server className="h-9 w-9 text-white" />
+        <div className="flex flex-col items-center mb-10">
+          <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-[var(--primary)] to-purple-500 flex items-center justify-center mb-5 shadow-2xl shadow-[var(--primary)]/30">
+            <span className="font-bold text-white text-3xl">K</span>
           </div>
-          <h1 className="text-2xl font-bold">RUT-RVM Panel</h1>
-          <p className="text-[var(--muted-foreground)] mt-1">
-            Router & DIM-DB Yönetim Sistemi
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-[var(--foreground)] via-[var(--foreground)] to-[var(--muted-foreground)] bg-clip-text text-transparent">
+            Kapellar
+          </h1>
+          <p className="text-[var(--muted-foreground)] mt-2 text-sm">
+            RVM Yönetim Paneli
           </p>
         </div>
 
         {/* Login Card */}
-        <Card className="border-[var(--border)]">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-xl text-center">Giriş Yap</CardTitle>
+        <Card className="border-[var(--border)] backdrop-blur-sm bg-[var(--card)]/80">
+          <CardHeader className="space-y-1 pb-4">
+            <CardTitle className="text-xl text-center">Hoş Geldiniz</CardTitle>
             <CardDescription className="text-center">
-              Devam etmek için hesabınıza giriş yapın
+              Devam etmek için giriş yapın
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -101,6 +109,7 @@ export default function LoginPage() {
                   placeholder="ornek@email.com"
                   {...register("email")}
                   disabled={isLoading}
+                  className="h-11"
                 />
                 {errors.email && (
                   <p className="text-xs text-[var(--destructive)]">
@@ -118,11 +127,12 @@ export default function LoginPage() {
                     placeholder="••••••••"
                     {...register("password")}
                     disabled={isLoading}
+                    className="h-11 pr-10"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
                   >
                     {showPassword ? (
                       <EyeOff className="h-4 w-4" />
@@ -138,7 +148,11 @@ export default function LoginPage() {
                 )}
               </div>
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button
+                type="submit"
+                className="w-full h-11 bg-gradient-to-r from-[var(--primary)] to-purple-500 hover:opacity-90 transition-opacity shadow-lg shadow-[var(--primary)]/25"
+                disabled={isLoading}
+              >
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -152,6 +166,10 @@ export default function LoginPage() {
           </CardContent>
         </Card>
 
+        {/* Footer */}
+        <p className="text-center text-xs text-[var(--muted-foreground)] mt-8">
+          © 2024 Kapellar. Tüm hakları saklıdır.
+        </p>
       </div>
     </div>
   )
