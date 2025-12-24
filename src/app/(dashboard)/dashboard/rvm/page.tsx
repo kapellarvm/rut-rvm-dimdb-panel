@@ -14,6 +14,9 @@ import {
   Edit,
   Filter,
   X,
+  Database,
+  Loader2,
+  Sparkles,
 } from "lucide-react"
 import { PageHeader } from "@/components/shared/page-header"
 import { Button } from "@/components/ui/button"
@@ -70,9 +73,13 @@ export default function RvmPage() {
   const [month, setMonth] = useState("")
   const [selectedRvm, setSelectedRvm] = useState<RvmWithRouters | null>(null)
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [editingRvm, setEditingRvm] = useState<RvmWithRouters | null>(null)
   const [newRvmId, setNewRvmId] = useState("")
   const [newRvmName, setNewRvmName] = useState("")
   const [newRvmLocation, setNewRvmLocation] = useState("")
+  const [editRvmName, setEditRvmName] = useState("")
+  const [editRvmLocation, setEditRvmLocation] = useState("")
 
   // Fetch filter options
   const { data: filterOptions } = useQuery<RvmFilters>({
@@ -170,12 +177,93 @@ export default function RvmPage() {
     },
   })
 
+  // Edit RVM mutation
+  const editMutation = useMutation({
+    mutationFn: async (data: { id: string; name?: string; location?: string }) => {
+      const res = await fetch(`/api/rvm/${data.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: data.name, location: data.location }),
+      })
+      if (!res.ok) throw new Error("Failed to update RVM")
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["rvm-units"] })
+      queryClient.invalidateQueries({ queryKey: ["rvm-filters"] })
+      toast({
+        title: "Başarılı",
+        description: "RVM birimi güncellendi.",
+        variant: "success",
+      })
+      setEditDialogOpen(false)
+      setEditingRvm(null)
+      setEditRvmName("")
+      setEditRvmLocation("")
+    },
+    onError: () => {
+      toast({
+        title: "Hata",
+        description: "RVM birimi güncellenemedi.",
+        variant: "destructive",
+      })
+    },
+  })
+
+  // Auto-create DIM-DB mutation
+  const autoDimDbMutation = useMutation({
+    mutationFn: async (rvmId: string) => {
+      const res = await fetch(`/api/rvm/${rvmId}/auto-dimdb`, {
+        method: "POST",
+      })
+      if (!res.ok) throw new Error("Failed to auto-create DIM-DB")
+      return res.json()
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["rvm-units"] })
+      toast({
+        title: "Başarılı",
+        description: data.message || `${data.assigned} router için DIM-DB oluşturuldu.`,
+        variant: "success",
+      })
+      // Refresh selected RVM data
+      if (selectedRvm) {
+        fetch(`/api/rvm/${selectedRvm.id}?includeRouters=true`)
+          .then((res) => res.json())
+          .then((data) => setSelectedRvm(data))
+      }
+    },
+    onError: () => {
+      toast({
+        title: "Hata",
+        description: "DIM-DB oluşturulamadı.",
+        variant: "destructive",
+      })
+    },
+  })
+
   const handleCreate = () => {
     if (!newRvmId) return
     createMutation.mutate({
       rvmId: newRvmId,
       name: newRvmName || undefined,
       location: newRvmLocation || undefined,
+    })
+  }
+
+  const openEditDialog = (rvm: RvmWithRouters) => {
+    setEditingRvm(rvm)
+    setEditRvmName(rvm.name || "")
+    setEditRvmLocation(rvm.location || "")
+    setEditDialogOpen(true)
+  }
+
+  const handleEdit = () => {
+    if (!editingRvm) return
+    editMutation.mutate({
+      id: editingRvm.id,
+      name: editRvmName || undefined,
+      location: editRvmLocation || undefined,
     })
   }
 
@@ -335,7 +423,7 @@ export default function RvmPage() {
                       <DropdownMenuItem
                         onClick={(e) => {
                           e.stopPropagation()
-                          // Edit functionality
+                          openEditDialog(rvm)
                         }}
                       >
                         <Edit className="mr-2 h-4 w-4" />
@@ -434,19 +522,107 @@ export default function RvmPage() {
 
           {selectedRvm && (
             <div className="space-y-6">
-              <div className="flex gap-4">
-                <Badge variant="secondary">
-                  {selectedRvm._count.routers} router
-                </Badge>
-                {selectedRvm.routers.filter((r) => r.dimDb).length > 0 && (
-                  <Badge variant="success">
-                    {selectedRvm.routers.filter((r) => r.dimDb).length} DIM-DB atanmış
-                  </Badge>
-                )}
+              {/* Summary Stats */}
+              <div className="grid grid-cols-3 gap-4">
+                <Card className="p-4 bg-[var(--secondary)]/50">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                      <Router className="h-5 w-5 text-blue-500" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{selectedRvm._count.routers}</p>
+                      <p className="text-xs text-[var(--muted-foreground)]">Router</p>
+                    </div>
+                  </div>
+                </Card>
+                <Card className="p-4 bg-[var(--secondary)]/50">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center">
+                      <Database className="h-5 w-5 text-green-500" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{selectedRvm.routers.filter((r) => r.dimDb).length}</p>
+                      <p className="text-xs text-[var(--muted-foreground)]">DIM-DB Atanmış</p>
+                    </div>
+                  </div>
+                </Card>
+                <Card className="p-4 bg-[var(--secondary)]/50">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                      <Database className="h-5 w-5 text-orange-500" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{selectedRvm.routers.filter((r) => !r.dimDb).length}</p>
+                      <p className="text-xs text-[var(--muted-foreground)]">Bekleyen</p>
+                    </div>
+                  </div>
+                </Card>
               </div>
 
+              {/* Auto-create DIM-DB Button */}
+              {isAdmin && selectedRvm.routers.filter((r) => !r.dimDb).length > 0 && (
+                <Card className="p-4 border-dashed border-2 border-[var(--primary)]/30 bg-[var(--primary)]/5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Sparkles className="h-5 w-5 text-[var(--primary)]" />
+                      <div>
+                        <p className="font-medium">Otomatik DIM-DB Oluştur</p>
+                        <p className="text-sm text-[var(--muted-foreground)]">
+                          {selectedRvm.routers.filter((r) => !r.dimDb).length} bekleyen router için otomatik DIM-DB oluştur ve eşleştir
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={() => autoDimDbMutation.mutate(selectedRvm.id)}
+                      disabled={autoDimDbMutation.isPending}
+                      className="bg-[var(--primary)] hover:bg-[var(--primary-hover)]"
+                    >
+                      {autoDimDbMutation.isPending ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Oluşturuluyor...
+                        </>
+                      ) : (
+                        <>
+                          <Database className="mr-2 h-4 w-4" />
+                          Oluştur
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </Card>
+              )}
+
+              {/* DIM-DB List */}
+              {selectedRvm.routers.filter((r) => r.dimDb).length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="font-semibold flex items-center gap-2">
+                    <Database className="h-4 w-4 text-green-500" />
+                    Bağlı DIM-DB&apos;ler
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {selectedRvm.routers
+                      .filter((r) => r.dimDb)
+                      .map((router) => (
+                        <Card key={router.id} className="p-3 bg-green-500/5 border-green-500/20">
+                          <div className="flex items-center gap-2">
+                            <Database className="h-4 w-4 text-green-500" />
+                            <div>
+                              <p className="font-mono text-sm">{router.dimDb!.dimDbCode}</p>
+                              <p className="text-xs text-[var(--muted-foreground)]">{router.boxNo}</p>
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-4">
-                <h4 className="font-semibold">Bağlı Router&apos;lar</h4>
+                <h4 className="font-semibold flex items-center gap-2">
+                  <Router className="h-4 w-4 text-blue-500" />
+                  Bağlı Router&apos;lar
+                </h4>
                 {selectedRvm.routers.length === 0 ? (
                   <p className="text-[var(--muted-foreground)]">
                     Bu RVM&apos;e bağlı router yok
@@ -592,6 +768,71 @@ export default function RvmPage() {
                 disabled={!newRvmId || createMutation.isPending}
               >
                 {createMutation.isPending ? "Oluşturuluyor..." : "Oluştur"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit RVM Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>RVM Birimi Düzenle</DialogTitle>
+            <DialogDescription>
+              {editingRvm?.rvmId} birimini düzenleyin
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="editRvmId">RVM ID</Label>
+              <Input
+                id="editRvmId"
+                value={editingRvm?.rvmId || ""}
+                disabled
+                className="bg-[var(--secondary)]"
+              />
+              <p className="text-xs text-[var(--muted-foreground)]">
+                RVM ID değiştirilemez
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editName">İsim (Opsiyonel)</Label>
+              <Input
+                id="editName"
+                placeholder="Örn: Ana Bina RVM"
+                value={editRvmName}
+                onChange={(e) => setEditRvmName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editLocation">Konum (Opsiyonel)</Label>
+              <Input
+                id="editLocation"
+                placeholder="Örn: İstanbul"
+                value={editRvmLocation}
+                onChange={(e) => setEditRvmLocation(e.target.value)}
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setEditDialogOpen(false)
+                  setEditingRvm(null)
+                  setEditRvmName("")
+                  setEditRvmLocation("")
+                }}
+              >
+                İptal
+              </Button>
+              <Button
+                onClick={handleEdit}
+                disabled={editMutation.isPending}
+              >
+                {editMutation.isPending ? "Güncelleniyor..." : "Güncelle"}
               </Button>
             </div>
           </div>
