@@ -4,10 +4,5 @@
   "buildCommand": "prisma generate && next build",
   "installCommand": "npm install",
   "outputDirectory": ".next",
-  "regions": ["fra1"],
-  "env": {
-    "DATABASE_URL": "@database_url",
-    "NEXTAUTH_SECRET": "@nextauth_secret",
-    "NEXTAUTH_URL": "@nextauth_url"
-  }
+  "regions": ["fra1"]
 }
