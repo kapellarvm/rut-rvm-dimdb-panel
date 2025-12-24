@@ -54,7 +54,7 @@ describe("utils", () => {
 
   describe("maskPassword", () => {
     it("should mask password with dots", () => {
-      expect(maskPassword("password123")).toBe("••••••••••••")
+      expect(maskPassword("password123")).toBe("•••••••••••")
     })
 
     it("should handle empty string", () => {

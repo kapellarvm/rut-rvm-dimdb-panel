@@ -12,6 +12,8 @@ import {
   MapPin,
   Trash2,
   Edit,
+  Filter,
+  X,
 } from "lucide-react"
 import { PageHeader } from "@/components/shared/page-header"
 import { Button } from "@/components/ui/button"
@@ -32,16 +34,29 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { PasswordField } from "@/components/shared/password-field"
 import { CopyButton } from "@/components/shared/copy-button"
 import { toast } from "@/hooks/use-toast"
-import { formatMacAddress } from "@/lib/utils"
+import { formatMacAddress, formatMonth, parseRvmId } from "@/lib/utils"
 import type { RvmUnit, Router as RouterType, DimDb } from "@/types"
 
 interface RvmWithRouters extends RvmUnit {
   routers: (RouterType & { dimDb: DimDb | null })[]
   _count: { routers: number }
+}
+
+interface RvmFilters {
+  machineClasses: string[]
+  years: string[]
+  months: string[]
 }
 
 export default function RvmPage() {
@@ -50,25 +65,54 @@ export default function RvmPage() {
   const isAdmin = session?.user?.role === "SUPER_ADMIN"
 
   const [search, setSearch] = useState("")
+  const [machineClass, setMachineClass] = useState("")
+  const [year, setYear] = useState("")
+  const [month, setMonth] = useState("")
   const [selectedRvm, setSelectedRvm] = useState<RvmWithRouters | null>(null)
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [newRvmId, setNewRvmId] = useState("")
   const [newRvmName, setNewRvmName] = useState("")
   const [newRvmLocation, setNewRvmLocation] = useState("")
 
+  // Fetch filter options
+  const { data: filterOptions } = useQuery<RvmFilters>({
+    queryKey: ["rvm-filters"],
+    queryFn: async () => {
+      const res = await fetch("/api/rvm/filters")
+      if (!res.ok) throw new Error("Failed to fetch filter options")
+      return res.json()
+    },
+  })
+
+  // Normalize filter values (convert __all__ to empty string for API)
+  const effectiveMachineClass = machineClass === "__all__" ? "" : machineClass
+  const effectiveYear = year === "__all__" ? "" : year
+  const effectiveMonth = month === "__all__" ? "" : month
+
   // Fetch RVM units
   const { data: rvmUnits, isLoading } = useQuery<RvmWithRouters[]>({
-    queryKey: ["rvm-units", search],
+    queryKey: ["rvm-units", search, effectiveMachineClass, effectiveYear, effectiveMonth],
     queryFn: async () => {
       const params = new URLSearchParams({
         search,
         includeRouters: "true",
+        machineClass: effectiveMachineClass,
+        year: effectiveYear,
+        month: effectiveMonth,
       })
       const res = await fetch(`/api/rvm?${params}`)
       if (!res.ok) throw new Error("Failed to fetch RVM units")
       return res.json()
     },
   })
+
+  const hasActiveFilters = effectiveMachineClass || effectiveYear || effectiveMonth
+
+  const clearFilters = () => {
+    setMachineClass("")
+    setYear("")
+    setMonth("")
+  }
 
   // Create RVM mutation
   const createMutation = useMutation({
@@ -135,13 +179,6 @@ export default function RvmPage() {
     })
   }
 
-  const filteredRvmUnits = rvmUnits?.filter(
-    (rvm) =>
-      rvm.rvmId.toLowerCase().includes(search.toLowerCase()) ||
-      rvm.name?.toLowerCase().includes(search.toLowerCase()) ||
-      rvm.location?.toLowerCase().includes(search.toLowerCase())
-  )
-
   return (
     <div className="space-y-6">
       <PageHeader
@@ -156,16 +193,97 @@ export default function RvmPage() {
         )}
       </PageHeader>
 
-      {/* Search */}
+      {/* Search and Filters */}
       <Card className="p-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--muted-foreground)]" />
-          <Input
-            placeholder="RVM ID, isim veya konum ile ara..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
-          />
+        <div className="flex flex-col gap-4">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--muted-foreground)]" />
+            <Input
+              placeholder="RVM ID, isim veya konum ile ara..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
+          {/* Smart Filters */}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 text-sm text-[var(--muted-foreground)]">
+              <Filter className="h-4 w-4" />
+              <span>Akıllı Filtreler:</span>
+            </div>
+
+            <Select value={machineClass} onValueChange={setMachineClass}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="Makine Sınıfı" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">Tüm Sınıflar</SelectItem>
+                {filterOptions?.machineClasses.map((cls) => (
+                  <SelectItem key={cls} value={cls}>
+                    Sınıf {cls}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={year} onValueChange={setYear}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Yıl" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">Tüm Yıllar</SelectItem>
+                {filterOptions?.years.map((y) => (
+                  <SelectItem key={y} value={y}>
+                    20{y}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={month} onValueChange={setMonth}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Ay" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">Tüm Aylar</SelectItem>
+                {filterOptions?.months.map((m) => (
+                  <SelectItem key={m} value={m}>
+                    {formatMonth(m)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearFilters}
+                className="text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+              >
+                <X className="h-4 w-4 mr-1" />
+                Filtreleri Temizle
+              </Button>
+            )}
+          </div>
+
+          {/* Active filters info */}
+          {hasActiveFilters && (
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-[var(--muted-foreground)]">Aktif filtreler:</span>
+              {effectiveMachineClass && (
+                <Badge variant="secondary">Sınıf: {effectiveMachineClass}</Badge>
+              )}
+              {effectiveYear && (
+                <Badge variant="secondary">Yıl: 20{effectiveYear}</Badge>
+              )}
+              {effectiveMonth && (
+                <Badge variant="secondary">Ay: {formatMonth(effectiveMonth)}</Badge>
+              )}
+            </div>
+          )}
         </div>
       </Card>
 
@@ -178,12 +296,12 @@ export default function RvmPage() {
               <Skeleton className="h-4 w-24" />
             </Card>
           ))
-        ) : filteredRvmUnits?.length === 0 ? (
+        ) : rvmUnits?.length === 0 ? (
           <div className="col-span-full text-center py-12 text-[var(--muted-foreground)]">
             RVM birimi bulunamadı
           </div>
         ) : (
-          filteredRvmUnits?.map((rvm) => (
+          rvmUnits?.map((rvm) => (
             <Card
               key={rvm.id}
               className="hover-lift cursor-pointer"
@@ -244,6 +362,29 @@ export default function RvmPage() {
                 )}
               </CardHeader>
               <CardContent>
+                {/* Parsed RVM ID Info */}
+                {(() => {
+                  const parsed = parseRvmId(rvm.rvmId)
+                  if (parsed.isValid) {
+                    return (
+                      <div className="flex flex-wrap gap-1.5 mb-3 text-xs">
+                        <Badge variant="outline" className="font-normal">
+                          Sınıf: {parsed.machineClass}
+                        </Badge>
+                        <Badge variant="outline" className="font-normal">
+                          20{parsed.year}
+                        </Badge>
+                        <Badge variant="outline" className="font-normal">
+                          {formatMonth(parsed.month)}
+                        </Badge>
+                        <Badge variant="outline" className="font-normal">
+                          #{parsed.order}
+                        </Badge>
+                      </div>
+                    )
+                  }
+                  return null
+                })()}
                 <div className="flex items-center gap-4 text-sm">
                   <div className="flex items-center gap-1 text-[var(--muted-foreground)]">
                     <Router className="h-4 w-4" />

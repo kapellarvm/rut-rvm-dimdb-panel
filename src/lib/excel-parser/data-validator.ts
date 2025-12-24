@@ -98,7 +98,7 @@ class DataValidator {
       cleanedData.dimDbId = row.dimDbId.trim()
     }
 
-    const isValid = errors.length === 0 && (cleanedData.serialNumber || cleanedData.imei)
+    const isValid = errors.length === 0 && !!(cleanedData.serialNumber || cleanedData.imei)
 
     return { isValid, errors, warnings, cleanedData }
   }
