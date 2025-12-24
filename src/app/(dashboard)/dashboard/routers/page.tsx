@@ -72,9 +72,14 @@ export default function RoutersPage() {
   const [dimDbStatus, setDimDbStatus] = useState("all")
   const [rvmFilter, setRvmFilter] = useState("all")
   const [page, setPage] = useState(1)
-  const [selectedRouter, setSelectedRouter] = useState<Router | null>(null)
+  const [selectedRouter, setSelectedRouter] = useState<(Router & { rvmUnit?: RvmUnit | null; dimDb?: DimDb | null }) | null>(null)
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false)
   const [assignDialogOpen, setAssignDialogOpen] = useState(false)
   const [selectedDimDb, setSelectedDimDb] = useState<string>("")
+
+  // Quick assign state
+  const [editRvmId, setEditRvmId] = useState("")
+  const [editDimDbCode, setEditDimDbCode] = useState("")
 
   // Fetch routers
   const { data: routersData, isLoading } = useQuery<RoutersResponse>({
@@ -177,12 +182,79 @@ export default function RoutersPage() {
     },
   })
 
+  // Quick assign mutation
+  const quickAssignMutation = useMutation({
+    mutationFn: async ({
+      routerId,
+      rvmId,
+      dimDbCode,
+    }: {
+      routerId: string
+      rvmId: string
+      dimDbCode: string
+    }) => {
+      const res = await fetch(`/api/routers/${routerId}/quick-assign`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rvmId, dimDbCode }),
+      })
+      if (!res.ok) throw new Error("Failed to quick assign")
+      return res.json()
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["routers"] })
+      queryClient.invalidateQueries({ queryKey: ["rvm-units"] })
+      queryClient.invalidateQueries({ queryKey: ["dimdb-list"] })
+
+      const messages: string[] = []
+      if (data.created?.rvm) {
+        messages.push(`RVM "${data.created.rvm}" oluşturuldu`)
+      }
+      if (data.created?.dimDb) {
+        messages.push(`DIM-DB "${data.created.dimDb}" oluşturuldu`)
+      }
+
+      toast({
+        title: "Başarılı",
+        description: messages.length > 0
+          ? `Atama yapıldı. ${messages.join(", ")}.`
+          : "Atama güncellendi.",
+        variant: "success",
+      })
+      setDetailDialogOpen(false)
+      setSelectedRouter(null)
+    },
+    onError: () => {
+      toast({
+        title: "Hata",
+        description: "Atama başarısız oldu.",
+        variant: "destructive",
+      })
+    },
+  })
+
   const handleAssignDimDb = () => {
     if (!selectedRouter) return
     assignMutation.mutate({
       routerId: selectedRouter.id,
-      dimDbId: selectedDimDb || null,
+      dimDbId: selectedDimDb === "__unassign__" ? null : selectedDimDb || null,
     })
+  }
+
+  const handleQuickAssign = () => {
+    if (!selectedRouter) return
+    quickAssignMutation.mutate({
+      routerId: selectedRouter.id,
+      rvmId: editRvmId,
+      dimDbCode: editDimDbCode,
+    })
+  }
+
+  const openDetailDialog = (router: Router & { rvmUnit?: RvmUnit | null; dimDb?: DimDb | null }) => {
+    setSelectedRouter(router)
+    setEditRvmId(router.rvmUnit?.rvmId || "")
+    setEditDimDbCode(router.dimDb?.dimDbCode || "")
+    setDetailDialogOpen(true)
   }
 
   return (
@@ -351,10 +423,7 @@ export default function RoutersPage() {
                             </a>
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => {
-                              setSelectedRouter(router)
-                              setSelectedDimDb(router.dimDbId || "")
-                            }}
+                            onClick={() => openDetailDialog(router)}
                           >
                             <Eye className="mr-2 h-4 w-4" />
                             Detay Görüntüle
@@ -427,8 +496,11 @@ export default function RoutersPage() {
 
       {/* Router Detail Dialog */}
       <Dialog
-        open={!!selectedRouter && !assignDialogOpen}
-        onOpenChange={(open) => !open && setSelectedRouter(null)}
+        open={detailDialogOpen}
+        onOpenChange={(open) => {
+          setDetailDialogOpen(open)
+          if (!open) setSelectedRouter(null)
+        }}
       >
         <DialogContent className="max-w-2xl">
           <DialogHeader>
@@ -541,6 +613,49 @@ export default function RoutersPage() {
                   </div>
                 </div>
               </div>
+
+              {/* RVM & DIM-DB Assignment */}
+              {isAdmin && (
+                <div className="border-t border-[var(--border)] pt-4">
+                  <h4 className="font-semibold mb-3">RVM & DIM-DB Atama</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm text-[var(--muted-foreground)]">
+                        RVM ID
+                      </label>
+                      <Input
+                        value={editRvmId}
+                        onChange={(e) => setEditRvmId(e.target.value)}
+                        placeholder="Örn: KPL0402511010"
+                      />
+                      <p className="text-xs text-[var(--muted-foreground)]">
+                        Yoksa otomatik oluşturulur
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm text-[var(--muted-foreground)]">
+                        DIM-DB Kodu
+                      </label>
+                      <Input
+                        value={editDimDbCode}
+                        onChange={(e) => setEditDimDbCode(e.target.value)}
+                        placeholder="Örn: DIMDB-2024-001"
+                      />
+                      <p className="text-xs text-[var(--muted-foreground)]">
+                        Yoksa otomatik oluşturulur
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex justify-end mt-4">
+                    <Button
+                      onClick={handleQuickAssign}
+                      disabled={quickAssignMutation.isPending}
+                    >
+                      {quickAssignMutation.isPending ? "Kaydediliyor..." : "Kaydet"}
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
@@ -562,7 +677,7 @@ export default function RoutersPage() {
                 <SelectValue placeholder="DIM-DB seçin" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Atamayı Kaldır</SelectItem>
+                <SelectItem value="__unassign__">Atamayı Kaldır</SelectItem>
                 {dimDbList?.map((dimDb) => (
                   <SelectItem key={dimDb.id} value={dimDb.id}>
                     {dimDb.dimDbCode}

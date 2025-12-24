@@ -24,23 +24,36 @@ export async function POST(request: NextRequest) {
     const workbook = XLSX.read(buffer, { type: "array" })
     const firstSheet = workbook.Sheets[workbook.SheetNames[0]]
 
-    // Get headers
+    // Get range
     const range = XLSX.utils.decode_range(firstSheet["!ref"] || "A1")
-    const headers: string[] = []
+
+    // Check if first row is a title row (only first cell has data or most cells empty)
+    let headerRow = range.s.r
+    let filledCellsInFirstRow = 0
     for (let col = range.s.c; col <= range.e.c; col++) {
-      const cellAddress = XLSX.utils.encode_cell({ r: range.s.r, c: col })
-      const cell = firstSheet[cellAddress]
-      headers.push(cell ? String(cell.v).trim() : `Column${col + 1}`)
+      const cell = firstSheet[XLSX.utils.encode_cell({ r: 0, c: col })]
+      if (cell && String(cell.v).trim()) {
+        filledCellsInFirstRow++
+      }
     }
 
-    // Detect column mappings
-    const columnMatches = headerDetector.detectColumns(headers)
+    // If first row has less than 3 filled cells, assume it's a title and use row 2 as headers
+    if (filledCellsInFirstRow < 3 && range.e.r > 1) {
+      headerRow = 1
+    }
 
-    // Parse rows
+    // Parse rows starting after header row
     const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(firstSheet, {
       defval: "",
       raw: false,
+      range: headerRow, // Start from header row
     })
+
+    // Get headers from parsed JSON keys (handles duplicate column names like Box No._1)
+    const headers = rows.length > 0 ? Object.keys(rows[0]) : []
+
+    // Detect column mappings
+    const columnMatches = headerDetector.detectColumns(headers)
 
     // Get existing data
     const existingRouters = await prisma.router.findMany({

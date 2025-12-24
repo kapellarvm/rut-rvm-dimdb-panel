@@ -14,58 +14,96 @@ interface FieldPattern {
 
 const FIELD_PATTERNS: FieldPattern[] = [
   {
+    field: 'boxNoPrefix',
+    patterns: [
+      'box no prefix', 'prefix', 'box prefix', 'model', 'model no',
+      'ürün kodu', 'product code', 'part no', 'part number', 'rut901',
+      'box no', 'box no.'
+    ],
+    weight: 0.8,
+  },
+  {
+    field: 'boxNo',
+    patterns: [
+      'box no_1', 'box no._1', 'box_1', 'kutu', 'kutu no', 'boxno', 'box number',
+      'box id', 'paket no', 'koli no', 'koli', 'ambalaj no'
+    ],
+    weight: 0.9,
+  },
+  {
     field: 'serialNumber',
-    patterns: ['s/n', 'sn', 'serial', 'seri', 'seri no', 'serial number', 'serialnumber', 'seri numarası'],
+    patterns: [
+      's/n', 'sn', 'serial', 'seri', 'seri no', 'serial number', 'serialnumber', 'seri numarası',
+      'serial no', 'ser no', 'ser.no', 'ser. no', 'serno', 's.n', 's.no', 's. no',
+      'ürün seri', 'cihaz seri', 'router seri', 'modem seri'
+    ],
     weight: 1.0,
   },
   {
     field: 'imei',
-    patterns: ['imei', 'imei no', 'imei number'],
+    patterns: [
+      'imei', 'imei no', 'imei number', 'imei numarası', 'imei1', 'imei 1',
+      'device imei', 'cihaz imei', 'modem imei', 'router imei'
+    ],
     weight: 1.0,
   },
   {
     field: 'macAddress',
-    patterns: ['mac', 'mac address', 'macaddress', 'mac adresi'],
+    patterns: [
+      'mac', 'mac address', 'macaddress', 'mac adresi', 'mac addr',
+      'wifi mac', 'wlan mac', 'ethernet mac', 'lan mac', 'mac id'
+    ],
     weight: 1.0,
   },
   {
-    field: 'boxNo',
-    patterns: ['box no', 'box', 'kutu', 'kutu no', 'boxno', 'box number'],
-    weight: 0.9,
-  },
-  {
-    field: 'boxNoPrefix',
-    patterns: ['box no prefix', 'prefix', 'box prefix'],
-    weight: 0.8,
-  },
-  {
     field: 'firmware',
-    patterns: ['fw', 'firmware', 'fw version', 'firmware version', 'version', 'versiyon'],
+    patterns: [
+      'fw', 'firmware', 'fw version', 'firmware version', 'version', 'versiyon',
+      'yazılım', 'yazılım versiyonu', 'sw version', 'software version',
+      'fw ver', 'firmware ver', 'yazılım sürümü'
+    ],
     weight: 0.9,
   },
   {
     field: 'ssid',
-    patterns: ['ssid', 'wifi ssid', 'wifi name', 'network name', 'ağ adı'],
+    patterns: [
+      'ssid', 'wifi ssid', 'wifi name', 'network name', 'ağ adı',
+      'wifi adı', 'kablosuz ağ', 'wireless name', 'wlan name', 'ap name'
+    ],
     weight: 1.0,
   },
   {
     field: 'wifiPassword',
-    patterns: ['wifi password', 'wifipassword', 'wifi pass', 'wifipass', 'wifi şifre', 'wifi pw', 'wifi şifresi', 'wireless password'],
+    patterns: [
+      'wifi password', 'wifipassword', 'wifi pass', 'wifipass', 'wifi şifre', 'wifi pw',
+      'wifi şifresi', 'wireless password', 'wlan password', 'wlan şifre', 'kablosuz şifre',
+      'wifi key', 'wireless key', 'wpa key', 'wpa password', 'network password'
+    ],
     weight: 1.0,
   },
   {
     field: 'devicePassword',
-    patterns: ['device password', 'devicepassword', 'panel password', 'panel pass', 'panel şifre', 'cihaz şifre', 'admin password', 'şifre'],
+    patterns: [
+      'device password', 'devicepassword', 'panel password', 'panel pass', 'panel şifre',
+      'cihaz şifre', 'admin password', 'şifre', 'password', 'admin şifre', 'yönetici şifre',
+      'router password', 'modem şifre', 'web password', 'login password', 'giriş şifre'
+    ],
     weight: 0.9,
   },
   {
     field: 'rvmId',
-    patterns: ['rvm', 'rvm id', 'rvmid', 'rvm no'],
+    patterns: [
+      'rvm', 'rvm id', 'rvmid', 'rvm no', 'rvm kodu', 'rvm code',
+      'makine id', 'machine id', 'otomat id', 'otomat no'
+    ],
     weight: 1.0,
   },
   {
     field: 'dimDbId',
-    patterns: ['dim-db', 'dimdb', 'dim db', 'dim-db id', 'dimdb id'],
+    patterns: [
+      'dim-db', 'dimdb', 'dim db', 'dim-db id', 'dimdb id',
+      'dim', 'db id', 'database id', 'veritabanı id'
+    ],
     weight: 1.0,
   },
 ]

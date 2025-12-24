@@ -92,6 +92,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         email: token.email,
         name: token.name,
         role: token.role,
+        emailVerified: null,
       }
       return session
     },
