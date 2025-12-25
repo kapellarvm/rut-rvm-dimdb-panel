@@ -12,6 +12,7 @@ datasource db {
 
 enum UserRole {
   SUPER_ADMIN
+  ADMIN
   VIEWER
 }
 

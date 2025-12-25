@@ -46,7 +46,7 @@ interface ImportResult {
 export default function ImportPage() {
   const { data: session } = useSession()
   const queryClient = useQueryClient()
-  const isAdmin = session?.user?.role === "SUPER_ADMIN"
+  const isAdmin = session?.user?.role === "SUPER_ADMIN" || session?.user?.role === "ADMIN"
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [importResult, setImportResult] = useState<ImportResult | null>(null)

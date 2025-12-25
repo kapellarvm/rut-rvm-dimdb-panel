@@ -11,6 +11,7 @@ import {
   Eye,
   Trash2,
   Edit,
+  Settings,
 } from "lucide-react"
 import { PageHeader } from "@/components/shared/page-header"
 import { Button } from "@/components/ui/button"
@@ -54,7 +55,7 @@ interface User {
   id: string
   email: string
   name: string
-  role: "SUPER_ADMIN" | "VIEWER"
+  role: "SUPER_ADMIN" | "ADMIN" | "VIEWER"
   createdAt: string
   lastLogin: string | null
 }
@@ -70,7 +71,7 @@ export default function UsersPage() {
     email: "",
     password: "",
     name: "",
-    role: "VIEWER" as "SUPER_ADMIN" | "VIEWER",
+    role: "VIEWER" as "SUPER_ADMIN" | "ADMIN" | "VIEWER",
   })
 
   // Fetch users
@@ -303,6 +304,11 @@ export default function UsersPage() {
                         <Shield className="h-3 w-3" />
                         Süper Admin
                       </Badge>
+                    ) : user.role === "ADMIN" ? (
+                      <Badge variant="primary" className="flex items-center gap-1 w-fit whitespace-nowrap">
+                        <Settings className="h-3 w-3" />
+                        Admin
+                      </Badge>
                     ) : (
                       <Badge variant="secondary" className="flex items-center gap-1 w-fit whitespace-nowrap">
                         <Eye className="h-3 w-3" />
@@ -423,7 +429,7 @@ export default function UsersPage() {
               <Label htmlFor="role">Rol *</Label>
               <Select
                 value={formData.role}
-                onValueChange={(value: "SUPER_ADMIN" | "VIEWER") =>
+                onValueChange={(value: "SUPER_ADMIN" | "ADMIN" | "VIEWER") =>
                   setFormData({ ...formData, role: value })
                 }
               >
@@ -432,6 +438,7 @@ export default function UsersPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="SUPER_ADMIN">Süper Admin</SelectItem>
+                  <SelectItem value="ADMIN">Admin</SelectItem>
                   <SelectItem value="VIEWER">İzleyici</SelectItem>
                 </SelectContent>
               </Select>

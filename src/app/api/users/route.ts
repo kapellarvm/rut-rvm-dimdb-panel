@@ -7,7 +7,7 @@ const userSchema = z.object({
   email: z.string().email("Geçerli bir email adresi girin"),
   password: z.string().min(6, "Şifre en az 6 karakter olmalı"),
   name: z.string().min(1, "İsim gerekli"),
-  role: z.enum(["SUPER_ADMIN", "VIEWER"]),
+  role: z.enum(["SUPER_ADMIN", "ADMIN", "VIEWER"]),
 })
 
 export async function GET() {

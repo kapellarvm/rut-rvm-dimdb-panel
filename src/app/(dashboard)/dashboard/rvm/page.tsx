@@ -65,7 +65,7 @@ interface RvmFilters {
 export default function RvmPage() {
   const { data: session } = useSession()
   const queryClient = useQueryClient()
-  const isAdmin = session?.user?.role === "SUPER_ADMIN"
+  const isAdmin = session?.user?.role === "SUPER_ADMIN" || session?.user?.role === "ADMIN"
 
   const [search, setSearch] = useState("")
   const [machineClass, setMachineClass] = useState("")
