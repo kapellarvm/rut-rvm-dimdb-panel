@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
     const pageSize = parseInt(searchParams.get("pageSize") || "20")
     const search = searchParams.get("search") || ""
     const rvmUnitId = searchParams.get("rvmUnitId")
+    const rvmStatus = searchParams.get("rvmStatus")
     const dimDbStatus = searchParams.get("dimDbStatus")
     const sortField = searchParams.get("sortField") || "createdAt"
     const sortDir = searchParams.get("sortDir") || "desc"
@@ -49,6 +50,14 @@ export async function GET(request: NextRequest) {
       where.rvmUnitId = rvmUnitId
     }
 
+    // RVM status filter
+    if (rvmStatus === "assigned") {
+      where.rvmUnitId = { not: null }
+    } else if (rvmStatus === "unassigned") {
+      where.rvmUnitId = null
+    }
+
+    // DIM-DB status filter
     if (dimDbStatus === "assigned") {
       where.dimDbId = { not: null }
     } else if (dimDbStatus === "unassigned") {
@@ -90,7 +99,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await auth()
-    if (!session?.user || session.user.role !== "SUPER_ADMIN") {
+    if (!session?.user || session.user.role === "VIEWER") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
