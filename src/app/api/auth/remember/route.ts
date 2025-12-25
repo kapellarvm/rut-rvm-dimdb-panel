@@ -14,7 +14,9 @@ export async function POST() {
   }
 
   // Cookie'yi 30 günlük persistent cookie olarak yeniden set et
-  cookieStore.set(cookieName, sessionToken.value, {
+  // NextResponse üzerinden set edilmeli, cookieStore.set() route handler'da çalışmaz
+  const response = NextResponse.json({ success: true })
+  response.cookies.set(cookieName, sessionToken.value, {
     httpOnly: true,
     sameSite: "lax",
     path: "/",
@@ -22,5 +24,5 @@ export async function POST() {
     maxAge: 30 * 24 * 60 * 60, // 30 gün
   })
 
-  return NextResponse.json({ success: true })
+  return response
 }
