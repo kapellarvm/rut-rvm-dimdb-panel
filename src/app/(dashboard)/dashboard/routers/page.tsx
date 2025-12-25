@@ -398,25 +398,23 @@ export default function RoutersPage() {
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Box No</TableHead>
+              <TableRow className="text-xs">
                 <TableHead>Seri No</TableHead>
-                <TableHead>MAC</TableHead>
                 <TableHead>SSID</TableHead>
-                <TableHead>WiFi Şifre</TableHead>
-                <TableHead>Panel Şifre</TableHead>
+                <TableHead>WiFi</TableHead>
+                <TableHead>Panel</TableHead>
                 <TableHead>RVM</TableHead>
                 <TableHead>DIM-DB</TableHead>
-                <TableHead className="w-[80px]"></TableHead>
+                <TableHead className="w-[50px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 [...Array(5)].map((_, i) => (
                   <TableRow key={i}>
-                    {[...Array(9)].map((_, j) => (
+                    {[...Array(7)].map((_, j) => (
                       <TableCell key={j}>
-                        <Skeleton className="h-4 w-20" />
+                        <Skeleton className="h-4 w-16" />
                       </TableCell>
                     ))}
                   </TableRow>
@@ -424,7 +422,7 @@ export default function RoutersPage() {
               ) : routersData?.data.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={9}
+                    colSpan={7}
                     className="text-center py-8 text-[var(--muted-foreground)]"
                   >
                     Router bulunamadı
@@ -432,37 +430,21 @@ export default function RoutersPage() {
                 </TableRow>
               ) : (
                 routersData?.data.map((router) => (
-                  <TableRow key={router.id}>
-                    <TableCell>
-                      <div className="font-medium">{router.boxNo}</div>
-                      {router.boxNoPrefix && (
-                        <div className="text-xs text-[var(--muted-foreground)]">
-                          {router.boxNoPrefix}
-                        </div>
-                      )}
-                    </TableCell>
+                  <TableRow key={router.id} className="text-xs">
                     <TableCell>
                       <div className="flex items-center gap-1">
-                        <span className="font-mono text-sm">
+                        <span className="font-mono">
                           {router.serialNumber}
                         </span>
-                        <CopyButton value={router.serialNumber} label="Seri No" />
+                        <CopyButton value={router.serialNumber} label="S/N" />
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <span className="font-mono text-xs">
-                          {formatMacAddress(router.macAddress)}
-                        </span>
-                        <CopyButton value={router.macAddress} label="MAC" />
-                      </div>
-                    </TableCell>
-                    <TableCell>{router.ssid || "-"}</TableCell>
+                    <TableCell className="max-w-[100px] truncate">{router.ssid || "-"}</TableCell>
                     <TableCell>
                       {router.wifiPassword ? (
                         <PasswordField
                           value={router.wifiPassword}
-                          label="WiFi Şifre"
+                          label="WiFi"
                         />
                       ) : (
                         "-"
@@ -472,7 +454,7 @@ export default function RoutersPage() {
                       {router.devicePassword ? (
                         <PasswordField
                           value={router.devicePassword}
-                          label="Panel Şifre"
+                          label="Panel"
                         />
                       ) : (
                         "-"
@@ -480,16 +462,16 @@ export default function RoutersPage() {
                     </TableCell>
                     <TableCell>
                       {router.rvmUnit ? (
-                        <Badge variant="secondary">{router.rvmUnit.rvmId}</Badge>
+                        <Badge variant="secondary" className="text-xs px-1.5 py-0.5">{router.rvmUnit.rvmId}</Badge>
                       ) : (
                         <span className="text-[var(--muted-foreground)]">-</span>
                       )}
                     </TableCell>
                     <TableCell>
                       {router.dimDb ? (
-                        <Badge variant="success">{router.dimDb.dimDbCode}</Badge>
+                        <Badge variant="success" className="text-xs px-1.5 py-0.5">Var</Badge>
                       ) : (
-                        <Badge variant="warning">Atanmamış</Badge>
+                        <Badge variant="warning" className="text-xs px-1.5 py-0.5">Yok</Badge>
                       )}
                     </TableCell>
                     <TableCell>
@@ -774,7 +756,6 @@ export default function RoutersPage() {
                       <Label htmlFor="devicePassword">Panel Şifresi</Label>
                       <Input
                         id="devicePassword"
-                        type="password"
                         value={editDevicePassword}
                         onChange={(e) => setEditDevicePassword(e.target.value)}
                         placeholder="Yeni panel şifresi"
@@ -787,7 +768,6 @@ export default function RoutersPage() {
                       <Label htmlFor="wifiPassword">WiFi Şifresi</Label>
                       <Input
                         id="wifiPassword"
-                        type="password"
                         value={editWifiPassword}
                         onChange={(e) => setEditWifiPassword(e.target.value)}
                         placeholder="Yeni WiFi şifresi"
