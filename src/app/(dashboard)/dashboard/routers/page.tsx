@@ -11,10 +11,12 @@ import {
   Database,
   Trash2,
   Eye,
+  Wifi,
 } from "lucide-react"
 import { PageHeader } from "@/components/shared/page-header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import {
@@ -48,6 +50,7 @@ import {
 } from "@/components/ui/dialog"
 import { PasswordField } from "@/components/shared/password-field"
 import { CopyButton } from "@/components/shared/copy-button"
+import { WifiQrDialog } from "@/components/shared/wifi-qr-dialog"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "@/hooks/use-toast"
 import { formatMacAddress } from "@/lib/utils"
@@ -80,6 +83,14 @@ export default function RoutersPage() {
   // Quick assign state
   const [editRvmId, setEditRvmId] = useState("")
   const [editDimDbCode, setEditDimDbCode] = useState("")
+
+  // Panel password edit state
+  const [editDevicePassword, setEditDevicePassword] = useState("")
+  const [editWifiPassword, setEditWifiPassword] = useState("")
+
+  // WiFi QR dialog state
+  const [wifiQrDialogOpen, setWifiQrDialogOpen] = useState(false)
+  const [wifiQrRouter, setWifiQrRouter] = useState<{ ssid: string; password: string; name: string } | null>(null)
 
   // Fetch routers
   const { data: routersData, isLoading } = useQuery<RoutersResponse>({
@@ -233,6 +244,47 @@ export default function RoutersPage() {
     },
   })
 
+  // Update router passwords mutation
+  const updatePasswordsMutation = useMutation({
+    mutationFn: async ({
+      routerId,
+      devicePassword,
+      wifiPassword,
+    }: {
+      routerId: string
+      devicePassword?: string
+      wifiPassword?: string
+    }) => {
+      const res = await fetch(`/api/routers/${routerId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...(devicePassword && { devicePassword }),
+          ...(wifiPassword && { wifiPassword }),
+        }),
+      })
+      if (!res.ok) throw new Error("Failed to update passwords")
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["routers"] })
+      toast({
+        title: "Başarılı",
+        description: "Şifreler güncellendi.",
+        variant: "success",
+      })
+      setDetailDialogOpen(false)
+      setSelectedRouter(null)
+    },
+    onError: () => {
+      toast({
+        title: "Hata",
+        description: "Şifreler güncellenemedi.",
+        variant: "destructive",
+      })
+    },
+  })
+
   const handleAssignDimDb = () => {
     if (!selectedRouter) return
     assignMutation.mutate({
@@ -250,11 +302,47 @@ export default function RoutersPage() {
     })
   }
 
+  const handleUpdatePasswords = () => {
+    if (!selectedRouter) return
+    if (!editDevicePassword && !editWifiPassword) {
+      toast({
+        title: "Uyarı",
+        description: "En az bir şifre alanı doldurulmalı.",
+        variant: "destructive",
+      })
+      return
+    }
+    updatePasswordsMutation.mutate({
+      routerId: selectedRouter.id,
+      devicePassword: editDevicePassword || undefined,
+      wifiPassword: editWifiPassword || undefined,
+    })
+  }
+
   const openDetailDialog = (router: Router & { rvmUnit?: RvmUnit | null; dimDb?: DimDb | null }) => {
     setSelectedRouter(router)
     setEditRvmId(router.rvmUnit?.rvmId || "")
     setEditDimDbCode(router.dimDb?.dimDbCode || "")
+    setEditDevicePassword("")
+    setEditWifiPassword("")
     setDetailDialogOpen(true)
+  }
+
+  const openWifiQrDialog = (router: Router) => {
+    if (!router.ssid || !router.wifiPassword) {
+      toast({
+        title: "Uyarı",
+        description: "Bu router için SSID veya WiFi şifresi tanımlı değil.",
+        variant: "destructive",
+      })
+      return
+    }
+    setWifiQrRouter({
+      ssid: router.ssid,
+      password: router.wifiPassword,
+      name: router.boxNo,
+    })
+    setWifiQrDialogOpen(true)
   }
 
   return (
@@ -276,10 +364,10 @@ export default function RoutersPage() {
               className="pl-10"
             />
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2 w-full md:w-auto">
             <Select value={dimDbStatus} onValueChange={setDimDbStatus}>
-              <SelectTrigger className="w-[150px]">
-                <Filter className="h-4 w-4 mr-2" />
+              <SelectTrigger className="w-full xs:w-[150px]">
+                <Filter className="h-4 w-4 mr-2 shrink-0" />
                 <SelectValue placeholder="DIM-DB Durumu" />
               </SelectTrigger>
               <SelectContent>
@@ -289,7 +377,7 @@ export default function RoutersPage() {
               </SelectContent>
             </Select>
             <Select value={rvmFilter} onValueChange={setRvmFilter}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-full xs:w-[180px]">
                 <SelectValue placeholder="RVM Filtrele" />
               </SelectTrigger>
               <SelectContent>
@@ -428,6 +516,14 @@ export default function RoutersPage() {
                             <Eye className="mr-2 h-4 w-4" />
                             Detay Görüntüle
                           </DropdownMenuItem>
+                          {router.ssid && router.wifiPassword && (
+                            <DropdownMenuItem
+                              onClick={() => openWifiQrDialog(router)}
+                            >
+                              <Wifi className="mr-2 h-4 w-4" />
+                              WiFi QR Kodu
+                            </DropdownMenuItem>
+                          )}
                           {isAdmin && (
                             <>
                               <DropdownMenuSeparator />
@@ -468,9 +564,9 @@ export default function RoutersPage() {
 
         {/* Pagination */}
         {routersData && routersData.pagination.totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-[var(--border)] px-4 py-3">
-            <p className="text-sm text-[var(--muted-foreground)]">
-              Toplam {routersData.pagination.total} router
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-[var(--border)] px-4 py-3">
+            <p className="text-sm text-[var(--muted-foreground)] text-center sm:text-left">
+              Toplam {routersData.pagination.total} router ({page}/{routersData.pagination.totalPages})
             </p>
             <div className="flex gap-2">
               <Button
@@ -502,7 +598,7 @@ export default function RoutersPage() {
           if (!open) setSelectedRouter(null)
         }}
       >
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl w-full">
           <DialogHeader>
             <DialogTitle>Router Detayı</DialogTitle>
             <DialogDescription>
@@ -512,7 +608,7 @@ export default function RoutersPage() {
 
           {selectedRouter && (
             <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <p className="text-sm text-[var(--muted-foreground)]">Box No</p>
                   <p className="font-medium">{selectedRouter.boxNo}</p>
@@ -561,7 +657,7 @@ export default function RoutersPage() {
 
               <div className="border-t border-[var(--border)] pt-4">
                 <h4 className="font-semibold mb-3">Bağlantı Bilgileri</h4>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <p className="text-sm text-[var(--muted-foreground)]">SSID</p>
                     <div className="flex items-center gap-2">
@@ -612,13 +708,25 @@ export default function RoutersPage() {
                     </a>
                   </div>
                 </div>
+
+                {/* WiFi QR Button */}
+                {selectedRouter.ssid && selectedRouter.wifiPassword && (
+                  <Button
+                    variant="outline"
+                    className="w-full mt-4"
+                    onClick={() => openWifiQrDialog(selectedRouter)}
+                  >
+                    <Wifi className="h-4 w-4 mr-2" />
+                    WiFi QR Kodu Oluştur
+                  </Button>
+                )}
               </div>
 
               {/* RVM & DIM-DB Assignment */}
               {isAdmin && (
                 <div className="border-t border-[var(--border)] pt-4">
                   <h4 className="font-semibold mb-3">RVM & DIM-DB Atama</h4>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <label className="text-sm text-[var(--muted-foreground)]">
                         RVM ID
@@ -652,6 +760,49 @@ export default function RoutersPage() {
                       disabled={quickAssignMutation.isPending}
                     >
                       {quickAssignMutation.isPending ? "Kaydediliyor..." : "Kaydet"}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Password Update */}
+              {isAdmin && (
+                <div className="border-t border-[var(--border)] pt-4">
+                  <h4 className="font-semibold mb-3">Şifre Güncelleme</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="devicePassword">Panel Şifresi</Label>
+                      <Input
+                        id="devicePassword"
+                        type="password"
+                        value={editDevicePassword}
+                        onChange={(e) => setEditDevicePassword(e.target.value)}
+                        placeholder="Yeni panel şifresi"
+                      />
+                      <p className="text-xs text-[var(--muted-foreground)]">
+                        Router yönetim paneli şifresi
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="wifiPassword">WiFi Şifresi</Label>
+                      <Input
+                        id="wifiPassword"
+                        type="password"
+                        value={editWifiPassword}
+                        onChange={(e) => setEditWifiPassword(e.target.value)}
+                        placeholder="Yeni WiFi şifresi"
+                      />
+                      <p className="text-xs text-[var(--muted-foreground)]">
+                        Kablosuz ağ şifresi
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex justify-end mt-4">
+                    <Button
+                      onClick={handleUpdatePasswords}
+                      disabled={updatePasswordsMutation.isPending || (!editDevicePassword && !editWifiPassword)}
+                    >
+                      {updatePasswordsMutation.isPending ? "Güncelleniyor..." : "Şifreleri Güncelle"}
                     </Button>
                   </div>
                 </div>
@@ -704,6 +855,20 @@ export default function RoutersPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* WiFi QR Dialog */}
+      {wifiQrRouter && (
+        <WifiQrDialog
+          open={wifiQrDialogOpen}
+          onOpenChange={(open) => {
+            setWifiQrDialogOpen(open)
+            if (!open) setWifiQrRouter(null)
+          }}
+          ssid={wifiQrRouter.ssid}
+          password={wifiQrRouter.password}
+          routerName={wifiQrRouter.name}
+        />
+      )}
     </div>
   )
 }
