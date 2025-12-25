@@ -73,7 +73,7 @@ export default function RoutersPage() {
 
   const [search, setSearch] = useState("")
   const [dimDbStatus, setDimDbStatus] = useState("all")
-  const [rvmFilter, setRvmFilter] = useState("all")
+  const [rvmStatus, setRvmStatus] = useState("all")
   const [page, setPage] = useState(1)
   const [selectedRouter, setSelectedRouter] = useState<(Router & { rvmUnit?: RvmUnit | null; dimDb?: DimDb | null }) | null>(null)
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
@@ -94,27 +94,17 @@ export default function RoutersPage() {
 
   // Fetch routers
   const { data: routersData, isLoading } = useQuery<RoutersResponse>({
-    queryKey: ["routers", search, dimDbStatus, rvmFilter, page],
+    queryKey: ["routers", search, dimDbStatus, rvmStatus, page],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: page.toString(),
         pageSize: "20",
         search,
         dimDbStatus: dimDbStatus !== "all" ? dimDbStatus : "",
-        rvmUnitId: rvmFilter !== "all" ? rvmFilter : "",
+        rvmStatus: rvmStatus !== "all" ? rvmStatus : "",
       })
       const res = await fetch(`/api/routers?${params}`)
       if (!res.ok) throw new Error("Failed to fetch routers")
-      return res.json()
-    },
-  })
-
-  // Fetch RVM units for filter
-  const { data: rvmUnits } = useQuery<RvmUnit[]>({
-    queryKey: ["rvm-units"],
-    queryFn: async () => {
-      const res = await fetch("/api/rvm")
-      if (!res.ok) throw new Error("Failed to fetch RVM units")
       return res.json()
     },
   })
@@ -365,28 +355,25 @@ export default function RoutersPage() {
             />
           </div>
           <div className="flex flex-wrap gap-2 w-full md:w-auto">
-            <Select value={dimDbStatus} onValueChange={setDimDbStatus}>
-              <SelectTrigger className="w-full xs:w-[150px]">
+            <Select value={rvmStatus} onValueChange={setRvmStatus}>
+              <SelectTrigger className="w-full xs:w-[130px]">
                 <Filter className="h-4 w-4 mr-2 shrink-0" />
-                <SelectValue placeholder="DIM-DB Durumu" />
+                <SelectValue placeholder="RVM" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tümü</SelectItem>
-                <SelectItem value="assigned">Atanmış</SelectItem>
-                <SelectItem value="unassigned">Atanmamış</SelectItem>
+                <SelectItem value="all">RVM: Tümü</SelectItem>
+                <SelectItem value="assigned">RVM: Var</SelectItem>
+                <SelectItem value="unassigned">RVM: Yok</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={rvmFilter} onValueChange={setRvmFilter}>
-              <SelectTrigger className="w-full xs:w-[180px]">
-                <SelectValue placeholder="RVM Filtrele" />
+            <Select value={dimDbStatus} onValueChange={setDimDbStatus}>
+              <SelectTrigger className="w-full xs:w-[140px]">
+                <SelectValue placeholder="DIM-DB" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tüm RVM'ler</SelectItem>
-                {rvmUnits?.map((rvm) => (
-                  <SelectItem key={rvm.id} value={rvm.id}>
-                    {rvm.rvmId}
-                  </SelectItem>
-                ))}
+                <SelectItem value="all">DIM-DB: Tümü</SelectItem>
+                <SelectItem value="assigned">DIM-DB: Var</SelectItem>
+                <SelectItem value="unassigned">DIM-DB: Yok</SelectItem>
               </SelectContent>
             </Select>
           </div>
