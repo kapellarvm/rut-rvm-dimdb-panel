@@ -10,6 +10,7 @@ import { Loader2, Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from "@/hooks/use-toast"
 
@@ -24,6 +25,7 @@ export default function LoginPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(false)
 
   const {
     register,
@@ -50,6 +52,11 @@ export default function LoginPage() {
           variant: "destructive",
         })
       } else {
+        // "Beni hatırla" seçiliyse cookie'yi persistent yap
+        if (rememberMe) {
+          await fetch("/api/auth/remember", { method: "POST" })
+        }
+
         toast({
           title: "Giriş Başarılı",
           description: "Yönlendiriliyorsunuz...",
@@ -146,6 +153,21 @@ export default function LoginPage() {
                     {errors.password.message}
                   </p>
                 )}
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="rememberMe"
+                  checked={rememberMe}
+                  onCheckedChange={(checked) => setRememberMe(checked === true)}
+                  disabled={isLoading}
+                />
+                <Label
+                  htmlFor="rememberMe"
+                  className="text-sm font-normal cursor-pointer"
+                >
+                  Beni hatırla
+                </Label>
               </div>
 
               <Button
