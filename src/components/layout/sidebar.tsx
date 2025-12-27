@@ -14,13 +14,25 @@ import {
   LogOut,
   Menu,
   X,
+  Key,
+  Loader2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { signOut, useSession } from "next-auth/react"
 import { useState } from "react"
+import { useMutation } from "@tanstack/react-query"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,6 +41,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { toast } from "@/hooks/use-toast"
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -46,7 +59,72 @@ export function Sidebar() {
   const pathname = usePathname()
   const { data: session } = useSession()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false)
+  const [currentPassword, setCurrentPassword] = useState("")
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
   const isAdmin = session?.user?.role === "SUPER_ADMIN"
+
+  const changePasswordMutation = useMutation({
+    mutationFn: async (data: { currentPassword: string; newPassword: string }) => {
+      const res = await fetch("/api/users/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      })
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.error || "Şifre değiştirilemedi")
+      }
+      return res.json()
+    },
+    onSuccess: () => {
+      toast({
+        title: "Başarılı",
+        description: "Şifreniz başarıyla değiştirildi.",
+        variant: "success",
+      })
+      setPasswordDialogOpen(false)
+      setCurrentPassword("")
+      setNewPassword("")
+      setConfirmPassword("")
+    },
+    onError: (error) => {
+      toast({
+        title: "Hata",
+        description: error instanceof Error ? error.message : "Şifre değiştirilemedi",
+        variant: "destructive",
+      })
+    },
+  })
+
+  const handleChangePassword = () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast({
+        title: "Uyarı",
+        description: "Tüm alanları doldurun.",
+        variant: "destructive",
+      })
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "Uyarı",
+        description: "Yeni şifreler eşleşmiyor.",
+        variant: "destructive",
+      })
+      return
+    }
+    if (newPassword.length < 6) {
+      toast({
+        title: "Uyarı",
+        description: "Yeni şifre en az 6 karakter olmalı.",
+        variant: "destructive",
+      })
+      return
+    }
+    changePasswordMutation.mutate({ currentPassword, newPassword })
+  }
 
   const NavLinks = () => (
     <>
@@ -178,9 +256,9 @@ export function Sidebar() {
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>Hesabım</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <Settings className="mr-2 h-4 w-4" />
-                Ayarlar
+              <DropdownMenuItem onClick={() => setPasswordDialogOpen(true)}>
+                <Key className="mr-2 h-4 w-4" />
+                Şifre Değiştir
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -194,6 +272,76 @@ export function Sidebar() {
           </DropdownMenu>
         </div>
       </aside>
+
+      {/* Password Change Dialog */}
+      <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Şifre Değiştir</DialogTitle>
+            <DialogDescription>
+              Güvenliğiniz için şifrenizi düzenli olarak değiştirin
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="currentPassword">Mevcut Şifre</Label>
+              <Input
+                id="currentPassword"
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="Mevcut şifrenizi girin"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">Yeni Şifre</Label>
+              <Input
+                id="newPassword"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="En az 6 karakter"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Yeni Şifre (Tekrar)</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Yeni şifrenizi tekrar girin"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setPasswordDialogOpen(false)
+                  setCurrentPassword("")
+                  setNewPassword("")
+                  setConfirmPassword("")
+                }}
+              >
+                İptal
+              </Button>
+              <Button
+                onClick={handleChangePassword}
+                disabled={changePasswordMutation.isPending}
+              >
+                {changePasswordMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Kaydediliyor...
+                  </>
+                ) : (
+                  "Şifreyi Değiştir"
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
