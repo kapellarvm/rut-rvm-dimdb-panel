@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { Download, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { NetworkStatus } from "@/components/shared/network-status"
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>
@@ -90,6 +91,9 @@ export function PWAProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <>
+      {/* Network Status Banner */}
+      <NetworkStatus />
+
       {children}
 
       {/* PWA Install Banner */}
