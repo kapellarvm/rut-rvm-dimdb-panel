@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Download, X } from "lucide-react"
+import { Download, X, Share, PlusSquare, MoreHorizontal } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { NetworkStatus } from "@/components/shared/network-status"
@@ -11,9 +11,22 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>
 }
 
+// Check if device is iOS
+function isIOS(): boolean {
+  if (typeof navigator === "undefined") return false
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as unknown as { MSStream?: unknown }).MSStream
+}
+
+// Check if running in Safari
+function isSafari(): boolean {
+  if (typeof navigator === "undefined") return false
+  return /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
+}
+
 export function PWAProvider({ children }: { children: React.ReactNode }) {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const [showInstallBanner, setShowInstallBanner] = useState(false)
+  const [showIOSBanner, setShowIOSBanner] = useState(false)
   const [isInstalled, setIsInstalled] = useState(false)
 
   useEffect(() => {
@@ -45,7 +58,13 @@ export function PWAProvider({ children }: { children: React.ReactNode }) {
         })
     }
 
-    // Listen for install prompt
+    // iOS Safari - show custom install instructions
+    if (isIOS() && isSafari()) {
+      setTimeout(() => setShowIOSBanner(true), 3000)
+      return
+    }
+
+    // Listen for install prompt (Android/Desktop)
     const handleBeforeInstall = (e: Event) => {
       e.preventDefault()
       setDeferredPrompt(e as BeforeInstallPromptEvent)
@@ -59,6 +78,7 @@ export function PWAProvider({ children }: { children: React.ReactNode }) {
     const handleAppInstalled = () => {
       setIsInstalled(true)
       setShowInstallBanner(false)
+      setShowIOSBanner(false)
       setDeferredPrompt(null)
     }
 
@@ -86,6 +106,7 @@ export function PWAProvider({ children }: { children: React.ReactNode }) {
 
   const handleDismiss = () => {
     setShowInstallBanner(false)
+    setShowIOSBanner(false)
     localStorage.setItem("pwa-install-dismissed", Date.now().toString())
   }
 
@@ -96,7 +117,7 @@ export function PWAProvider({ children }: { children: React.ReactNode }) {
 
       {children}
 
-      {/* PWA Install Banner */}
+      {/* PWA Install Banner - Android/Desktop */}
       {showInstallBanner && !isInstalled && (
         <div className="fixed bottom-0 left-0 right-0 z-50 p-4 safe-area-bottom animate-in slide-in-from-bottom duration-300">
           <Card className="max-w-md mx-auto p-4 bg-[var(--card)] border-orange-500/20 shadow-lg shadow-orange-500/10">
@@ -122,6 +143,60 @@ export function PWAProvider({ children }: { children: React.ReactNode }) {
                     Daha Sonra
                   </Button>
                 </div>
+              </div>
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                onClick={handleDismiss}
+                className="shrink-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* iOS Install Instructions Banner */}
+      {showIOSBanner && !isInstalled && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 p-4 safe-area-bottom animate-in slide-in-from-bottom duration-300">
+          <Card className="max-w-md mx-auto p-4 bg-[var(--card)] border-orange-500/20 shadow-lg shadow-orange-500/10">
+            <div className="flex items-start gap-4">
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shrink-0">
+                <PlusSquare className="h-6 w-6 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-sm">Ana Ekrana Ekle</h3>
+                <p className="text-xs text-[var(--muted-foreground)] mt-1 mb-3">
+                  Uygulamayı yüklemek için:
+                </p>
+                <ol className="text-xs text-[var(--muted-foreground)] space-y-2">
+                  <li className="flex items-center gap-2">
+                    <span className="flex items-center justify-center h-5 w-5 rounded-full bg-[var(--primary)]/20 text-[var(--primary)] text-[10px] font-bold shrink-0">1</span>
+                    <span className="flex items-center gap-1">
+                      Alt menüden
+                      <Share className="h-4 w-4 text-[var(--primary)]" />
+                      <span className="font-medium text-[var(--foreground)]">Paylaş</span>
+                      butonuna tıklayın
+                    </span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="flex items-center justify-center h-5 w-5 rounded-full bg-[var(--primary)]/20 text-[var(--primary)] text-[10px] font-bold shrink-0">2</span>
+                    <span className="flex items-center gap-1">
+                      <PlusSquare className="h-4 w-4 text-[var(--primary)]" />
+                      <span className="font-medium text-[var(--foreground)]">Ana Ekrana Ekle</span>
+                      seçeneğine tıklayın
+                    </span>
+                  </li>
+                </ol>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleDismiss}
+                  className="h-8 mt-3"
+                >
+                  Anladım
+                </Button>
               </div>
               <Button
                 size="icon-sm"
