@@ -1,0 +1,35 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f97316"/>
+      <stop offset="100%" style="stop-color:#ea580c"/>
+    </linearGradient>
+    <linearGradient id="innerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fdba74"/>
+      <stop offset="100%" style="stop-color:#f97316"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background with rounded corners -->
+  <rect width="512" height="512" rx="108" fill="url(#bgGradient)"/>
+
+  <!-- Inner glow effect -->
+  <rect x="24" y="24" width="464" height="464" rx="92" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
+
+  <!-- K letter stylized as router/network symbol -->
+  <g transform="translate(256, 256)">
+    <!-- Main K shape -->
+    <path d="M-80 -120 L-80 120 L-40 120 L-40 20 L60 120 L120 120 L-10 -10 L110 -120 L50 -120 L-40 -30 L-40 -120 Z" fill="white"/>
+
+    <!-- WiFi signal arcs -->
+    <path d="M70 -80 Q120 -80 120 -30" stroke="white" stroke-width="12" fill="none" stroke-linecap="round" opacity="0.9"/>
+    <path d="M70 -50 Q100 -50 100 -10" stroke="white" stroke-width="10" fill="none" stroke-linecap="round" opacity="0.7"/>
+    <path d="M70 -25 Q85 -25 85 5" stroke="white" stroke-width="8" fill="none" stroke-linecap="round" opacity="0.5"/>
+
+    <!-- Connection dot -->
+    <circle cx="70" cy="10" r="10" fill="white" opacity="0.9"/>
+  </g>
+
+  <!-- Subtle shine effect -->
+  <ellipse cx="180" cy="140" rx="120" ry="80" fill="rgba(255,255,255,0.08)"/>
+</svg>

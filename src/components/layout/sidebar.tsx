@@ -185,7 +185,7 @@ export function Sidebar() {
   return (
     <>
       {/* Mobile menu button */}
-      <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between border-b border-[var(--border)] bg-[var(--background)]/95 backdrop-blur-md px-4 py-3 lg:hidden">
+      <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between border-b border-[var(--border)] bg-[var(--background)]/95 backdrop-blur-md px-4 py-3 lg:hidden safe-area-top">
         <div className="flex items-center gap-2.5">
           <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-[var(--primary)] to-orange-600 flex items-center justify-center shadow-lg shadow-[var(--primary)]/20">
             <span className="font-bold text-white text-sm">K</span>
@@ -209,12 +209,70 @@ export function Sidebar() {
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-40 lg:hidden">
           <div
-            className="fixed inset-0 bg-black/60"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setIsMobileMenuOpen(false)}
           />
-          <div className="fixed left-0 top-14 bottom-0 w-72 border-r border-[var(--border)] bg-[var(--background)] p-4">
-            <ScrollArea className="h-full">
+          <div className="fixed left-0 top-0 bottom-0 w-72 border-r border-[var(--border)] bg-[var(--background)] animate-slide-up safe-area-top safe-area-bottom">
+            {/* Mobile sidebar header */}
+            <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3">
+              <div className="flex items-center gap-2.5">
+                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-[var(--primary)] to-orange-600 flex items-center justify-center shadow-lg shadow-[var(--primary)]/20">
+                  <span className="font-bold text-white text-sm">K</span>
+                </div>
+                <span className="font-bold text-lg">Kapellar</span>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="touch-target"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+
+            {/* Mobile sidebar content */}
+            <ScrollArea className="h-[calc(100%-4rem)] px-4 py-4">
               <NavLinks />
+
+              {/* Mobile-only user section */}
+              <Separator className="my-4" />
+              <div className="space-y-2">
+                <div className="flex items-center gap-3 rounded-xl p-2 bg-[var(--secondary)]/50">
+                  <Avatar className="h-9 w-9">
+                    <AvatarFallback className="bg-[var(--primary)]/10 text-[var(--primary)]">
+                      {session?.user?.name?.charAt(0).toUpperCase() || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{session?.user?.name}</p>
+                    <p className="text-xs text-[var(--muted-foreground)]">
+                      {session?.user?.role === "SUPER_ADMIN" ? "Süper Admin" : session?.user?.role === "ADMIN" ? "Admin" : "İzleyici"}
+                    </p>
+                  </div>
+                </div>
+
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start gap-3 h-11 touch-target"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false)
+                    setPasswordDialogOpen(true)
+                  }}
+                >
+                  <Key className="h-5 w-5" />
+                  Şifre Değiştir
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start gap-3 h-11 touch-target text-[var(--destructive)]"
+                  onClick={() => signOut({ callbackUrl: "/login" })}
+                >
+                  <LogOut className="h-5 w-5" />
+                  Çıkış Yap
+                </Button>
+              </div>
             </ScrollArea>
           </div>
         </div>

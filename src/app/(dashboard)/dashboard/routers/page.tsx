@@ -380,8 +380,136 @@ export default function RoutersPage() {
         </div>
       </Card>
 
-      {/* Table */}
-      <Card>
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-3">
+        {isLoading ? (
+          [...Array(5)].map((_, i) => (
+            <Card key={i} className="p-4">
+              <Skeleton className="h-5 w-32 mb-2" />
+              <Skeleton className="h-4 w-24" />
+            </Card>
+          ))
+        ) : routersData?.data.length === 0 ? (
+          <Card className="p-8 text-center text-[var(--muted-foreground)]">
+            Router bulunamadı
+          </Card>
+        ) : (
+          routersData?.data.map((router) => (
+            <Card
+              key={router.id}
+              className="p-4 cursor-pointer hover-lift touch-feedback active:scale-[0.98]"
+              onClick={() => openDetailDialog(router)}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0 space-y-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-mono font-medium text-sm">{router.serialNumber}</span>
+                    <div className="flex gap-1">
+                      {router.dimDb ? (
+                        <Badge variant="success" className="text-xs">DIM-DB</Badge>
+                      ) : (
+                        <Badge variant="warning" className="text-xs">Bekliyor</Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 text-xs text-[var(--muted-foreground)]">
+                    {router.ssid && (
+                      <span className="flex items-center gap-1">
+                        <Wifi className="h-3 w-3" />
+                        {router.ssid}
+                      </span>
+                    )}
+                    {router.rvmUnit && (
+                      <Badge variant="secondary" className="text-xs">{router.rvmUnit.rvmId}</Badge>
+                    )}
+                  </div>
+                </div>
+
+                <div onClick={(e) => e.stopPropagation()}>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon-sm" className="touch-target">
+                        <MoreHorizontal className="h-5 w-5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem asChild>
+                        <a href="http://192.168.53.10" target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="mr-2 h-4 w-4" />
+                          Panel Aç
+                        </a>
+                      </DropdownMenuItem>
+                      {router.ssid && router.wifiPassword && (
+                        <DropdownMenuItem onClick={() => openWifiQrDialog(router)}>
+                          <Wifi className="mr-2 h-4 w-4" />
+                          WiFi QR Kodu
+                        </DropdownMenuItem>
+                      )}
+                      {isAdmin && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setSelectedRouter(router)
+                              setSelectedDimDb(router.dimDbId || "")
+                              setAssignDialogOpen(true)
+                            }}
+                          >
+                            <Database className="mr-2 h-4 w-4" />
+                            DIM-DB Ata
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-[var(--destructive)]"
+                            onClick={() => {
+                              if (confirm("Bu router'ı silmek istediğinize emin misiniz?")) {
+                                deleteMutation.mutate(router.id)
+                              }
+                            }}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Sil
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
+            </Card>
+          ))
+        )}
+
+        {/* Mobile Pagination */}
+        {routersData && routersData.pagination.totalPages > 1 && (
+          <div className="flex flex-col items-center gap-3 py-4">
+            <p className="text-sm text-[var(--muted-foreground)]">
+              {page}/{routersData.pagination.totalPages} ({routersData.pagination.total} router)
+            </p>
+            <div className="flex gap-2 w-full">
+              <Button
+                variant="outline"
+                className="flex-1 h-11"
+                disabled={page === 1}
+                onClick={() => setPage(page - 1)}
+              >
+                Önceki
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1 h-11"
+                disabled={page === routersData.pagination.totalPages}
+                onClick={() => setPage(page + 1)}
+              >
+                Sonraki
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <Card className="hidden md:block">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
@@ -417,7 +545,11 @@ export default function RoutersPage() {
                 </TableRow>
               ) : (
                 routersData?.data.map((router) => (
-                  <TableRow key={router.id} className="text-xs">
+                  <TableRow
+                    key={router.id}
+                    className="text-xs cursor-pointer hover:bg-[var(--accent)]/50 transition-colors active:bg-[var(--accent)]"
+                    onClick={() => openDetailDialog(router)}
+                  >
                     <TableCell>
                       <div className="flex items-center gap-1">
                         <span className="font-mono">
@@ -461,7 +593,7 @@ export default function RoutersPage() {
                         <Badge variant="warning" className="text-xs px-1.5 py-0.5">Yok</Badge>
                       )}
                     </TableCell>
-                    <TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon-sm">
@@ -531,7 +663,7 @@ export default function RoutersPage() {
           </Table>
         </div>
 
-        {/* Pagination */}
+        {/* Desktop Pagination */}
         {routersData && routersData.pagination.totalPages > 1 && (
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-[var(--border)] px-4 py-3">
             <p className="text-sm text-[var(--muted-foreground)] text-center sm:text-left">
