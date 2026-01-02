@@ -1,13 +1,26 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { Router, Server, Database, AlertCircle, Activity, Clock } from "lucide-react"
+import Link from "next/link"
+import { Router, Server, Database, AlertCircle, Activity, Clock, ChevronRight } from "lucide-react"
 import { StatsCard } from "@/components/shared/stats-card"
 import { PageHeader } from "@/components/shared/page-header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { formatDate } from "@/lib/utils"
+
+interface ActivityDetails {
+  rvmId?: string | null
+  dimDbCode?: string | null
+  dimDbId?: string | null
+  serialNumber?: string
+  created?: { rvm?: string; dimDb?: string }
+  count?: number
+  fileName?: string
+  [key: string]: unknown
+}
 
 interface DashboardStats {
   totalRouters: number
@@ -18,10 +31,70 @@ interface DashboardStats {
     id: string
     action: string
     entityType: string
-    details: Record<string, string> | null
+    details: ActivityDetails | null
     createdAt: string
     user: { name: string }
   }[]
+}
+
+// Generate human-readable activity message
+function getActivityMessage(activity: DashboardStats["recentActivity"][0]): string {
+  const { action, entityType, details } = activity
+
+  switch (action) {
+    case "IMPORT":
+      if (details?.count) {
+        return `${details.count} router içe aktardı`
+      }
+      return "Excel içe aktardı"
+
+    case "ASSIGN":
+      // Check what was assigned from details
+      if (details?.rvmId && details?.dimDbCode) {
+        return `RVM (${details.rvmId}) ve DIM-DB (${details.dimDbCode}) atadı`
+      } else if (details?.rvmId) {
+        return `RVM atadı: ${details.rvmId}`
+      } else if (details?.dimDbCode) {
+        return `DIM-DB atadı: ${details.dimDbCode}`
+      } else if (details?.dimDbId === "unassigned") {
+        return "DIM-DB atamasını kaldırdı"
+      }
+      return "atama yaptı"
+
+    case "CREATE":
+      if (entityType === "RVM") {
+        return `yeni RVM oluşturdu${details?.rvmId ? `: ${details.rvmId}` : ""}`
+      } else if (entityType === "DIMDB") {
+        return `yeni DIM-DB oluşturdu${details?.dimDbCode ? `: ${details.dimDbCode}` : ""}`
+      }
+      return "yeni kayıt oluşturdu"
+
+    case "UPDATE":
+      if (entityType === "ROUTER") {
+        return "router bilgilerini güncelledi"
+      } else if (entityType === "RVM") {
+        return "RVM bilgilerini güncelledi"
+      } else if (entityType === "USER") {
+        return "kullanıcı bilgilerini güncelledi"
+      }
+      return "güncelleme yaptı"
+
+    case "DELETE":
+      if (entityType === "ROUTER") {
+        return "router sildi"
+      } else if (entityType === "RVM") {
+        return "RVM sildi"
+      } else if (entityType === "DIMDB") {
+        return "DIM-DB sildi"
+      }
+      return "kayıt sildi"
+
+    case "PASSWORD_CHANGE":
+      return "şifresini değiştirdi"
+
+    default:
+      return action.toLowerCase()
+  }
 }
 
 export default function DashboardPage() {
@@ -94,6 +167,12 @@ export default function DashboardPage() {
               <Activity className="h-5 w-5 text-[var(--primary)]" />
               Son Aktiviteler
             </CardTitle>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/dashboard/activities" className="text-xs text-[var(--muted-foreground)]">
+                Tümünü Gör
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Link>
+            </Button>
           </CardHeader>
           <CardContent>
             {stats?.recentActivity && stats.recentActivity.length > 0 ? (
@@ -103,22 +182,18 @@ export default function DashboardPage() {
                     key={activity.id}
                     className="flex items-start gap-3 text-sm"
                   >
-                    <div className="h-2 w-2 rounded-full bg-[var(--primary)] mt-2" />
-                    <div className="flex-1">
+                    <div className="h-2 w-2 rounded-full bg-[var(--primary)] mt-2 shrink-0" />
+                    <div className="flex-1 min-w-0">
                       <p className="text-[var(--foreground)]">
                         <span className="font-medium">{activity.user.name}</span>{" "}
-                        {activity.action === "IMPORT" && "excel içe aktardı"}
-                        {activity.action === "ASSIGN" && "DIM-DB atadı"}
-                        {activity.action === "UPDATE" && "güncelleme yaptı"}
-                        {activity.action === "CREATE" && "yeni kayıt ekledi"}
-                        {activity.action === "DELETE" && "kayıt sildi"}
+                        {getActivityMessage(activity)}
                       </p>
                       <p className="text-xs text-[var(--muted-foreground)] flex items-center gap-1 mt-0.5">
                         <Clock className="h-3 w-3" />
                         {formatDate(activity.createdAt)}
                       </p>
                     </div>
-                    <Badge variant="secondary" className="text-xs">
+                    <Badge variant="secondary" className="text-xs shrink-0">
                       {activity.entityType}
                     </Badge>
                   </div>

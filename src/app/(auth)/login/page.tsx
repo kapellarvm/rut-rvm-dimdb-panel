@@ -107,13 +107,19 @@ export default function LoginPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              className="space-y-5"
+              autoComplete="on"
+            >
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
                   type="email"
                   placeholder="ornek@email.com"
+                  autoComplete="email username"
+                  inputMode="email"
                   {...register("email")}
                   disabled={isLoading}
                   className="h-11"
@@ -132,6 +138,7 @@ export default function LoginPage() {
                     id="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
+                    autoComplete="current-password"
                     {...register("password")}
                     disabled={isLoading}
                     className="h-11 pr-10"
@@ -140,6 +147,7 @@ export default function LoginPage() {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
+                    tabIndex={-1}
                   >
                     {showPassword ? (
                       <EyeOff className="h-4 w-4" />
