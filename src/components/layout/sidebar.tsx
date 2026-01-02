@@ -16,6 +16,7 @@ import {
   X,
   Key,
   Loader2,
+  Activity,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -49,6 +50,7 @@ const navigation = [
   { name: "RVM Birimleri", href: "/dashboard/rvm", icon: Server },
   { name: "DIM-DB", href: "/dashboard/dimdb", icon: Database },
   { name: "Excel Import", href: "/dashboard/import", icon: FileUp },
+  { name: "Aktiviteler", href: "/dashboard/activities", icon: Activity },
 ]
 
 const adminNavigation = [
