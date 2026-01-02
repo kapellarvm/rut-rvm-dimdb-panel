@@ -16,6 +16,8 @@ import {
   X,
   Database,
   Download,
+  Wifi,
+  QrCode,
 } from "lucide-react"
 import { PageHeader } from "@/components/shared/page-header"
 import { Button } from "@/components/ui/button"
@@ -46,6 +48,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { PasswordField } from "@/components/shared/password-field"
 import { CopyButton } from "@/components/shared/copy-button"
+import { WifiQrDialog } from "@/components/shared/wifi-qr-dialog"
 import { toast } from "@/hooks/use-toast"
 import { formatMacAddress, formatMonth, parseRvmId } from "@/lib/utils"
 import type { RvmUnit, Router as RouterType, DimDb } from "@/types"
@@ -81,6 +84,10 @@ export default function RvmPage() {
   const [newRvmLocation, setNewRvmLocation] = useState("")
   const [editRvmName, setEditRvmName] = useState("")
   const [editRvmLocation, setEditRvmLocation] = useState("")
+
+  // WiFi QR dialog state
+  const [wifiQrDialogOpen, setWifiQrDialogOpen] = useState(false)
+  const [wifiQrRouter, setWifiQrRouter] = useState<{ ssid: string; password: string; name: string } | null>(null)
 
   // Fetch filter options
   const { data: filterOptions } = useQuery<RvmFilters>({
@@ -253,6 +260,23 @@ export default function RvmPage() {
       name: editRvmName || undefined,
       location: editRvmLocation || undefined,
     })
+  }
+
+  const openWifiQrDialog = (router: RouterType) => {
+    if (!router.ssid || !router.wifiPassword) {
+      toast({
+        title: "Uyarı",
+        description: "Bu router için SSID veya WiFi şifresi tanımlı değil.",
+        variant: "destructive",
+      })
+      return
+    }
+    setWifiQrRouter({
+      ssid: router.ssid,
+      password: router.wifiPassword,
+      name: router.boxNo,
+    })
+    setWifiQrDialogOpen(true)
   }
 
   const handleExport = () => {
@@ -693,9 +717,9 @@ export default function RvmPage() {
                   <div className="space-y-3">
                     {selectedRvm.routers.map((router) => (
                       <Card key={router.id} className="p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="space-y-2 flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <span className="font-medium">{router.boxNo}</span>
                               {router.dimDb ? (
                                 <Badge variant="success">
@@ -767,6 +791,19 @@ export default function RvmPage() {
                                 )}
                               </div>
                             </div>
+
+                            {/* WiFi QR Button */}
+                            {router.ssid && router.wifiPassword && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openWifiQrDialog(router)}
+                                className="mt-2 gap-2"
+                              >
+                                <QrCode className="h-4 w-4" />
+                                WiFi QR Kodu
+                              </Button>
+                            )}
                           </div>
                         </div>
                       </Card>
@@ -900,6 +937,20 @@ export default function RvmPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* WiFi QR Dialog */}
+      {wifiQrRouter && (
+        <WifiQrDialog
+          open={wifiQrDialogOpen}
+          onOpenChange={(open) => {
+            setWifiQrDialogOpen(open)
+            if (!open) setWifiQrRouter(null)
+          }}
+          ssid={wifiQrRouter.ssid}
+          password={wifiQrRouter.password}
+          routerName={wifiQrRouter.name}
+        />
+      )}
     </div>
   )
 }
