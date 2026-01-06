@@ -52,6 +52,7 @@ import {
 import { PasswordField } from "@/components/shared/password-field"
 import { CopyButton } from "@/components/shared/copy-button"
 import { WifiQrDialog } from "@/components/shared/wifi-qr-dialog"
+import { RefreshButton } from "@/components/shared/refresh-button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "@/hooks/use-toast"
 import { formatMacAddress } from "@/lib/utils"
@@ -94,7 +95,7 @@ export default function RoutersPage() {
   const [wifiQrRouter, setWifiQrRouter] = useState<{ ssid: string; password: string; name: string } | null>(null)
 
   // Fetch routers
-  const { data: routersData, isLoading } = useQuery<RoutersResponse>({
+  const { data: routersData, isLoading, isFetching, dataUpdatedAt, refetch } = useQuery<RoutersResponse>({
     queryKey: ["routers", search, dimDbStatus, rvmStatus, page],
     queryFn: async () => {
       const params = new URLSearchParams({
@@ -341,7 +342,14 @@ export default function RoutersPage() {
       <PageHeader
         title="Router'lar"
         description="Sistemdeki tüm router'ları yönetin"
-      />
+      >
+        <RefreshButton
+          onClick={() => refetch()}
+          isLoading={isLoading}
+          isFetching={isFetching}
+          dataUpdatedAt={dataUpdatedAt}
+        />
+      </PageHeader>
 
       {/* Filters */}
       <Card className="p-4">

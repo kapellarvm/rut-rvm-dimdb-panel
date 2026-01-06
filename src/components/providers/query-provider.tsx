@@ -6,6 +6,8 @@ import { useState, useEffect } from "react"
 
 // Persist query cache to localStorage
 const CACHE_KEY = "kapellar-query-cache"
+const CACHE_TIMESTAMP_KEY = "kapellar-query-cache-timestamp"
+const MAX_CACHE_AGE = 10 * 60 * 1000 // 10 minutes max cache age
 
 function persistQueryCache(client: QueryClient) {
   try {
@@ -17,6 +19,7 @@ function persistQueryCache(client: QueryClient) {
         state: query.state,
       }))
     localStorage.setItem(CACHE_KEY, JSON.stringify(dataToStore))
+    localStorage.setItem(CACHE_TIMESTAMP_KEY, Date.now().toString())
   } catch {
     // Ignore storage errors
   }
@@ -24,6 +27,18 @@ function persistQueryCache(client: QueryClient) {
 
 function restoreQueryCache(client: QueryClient) {
   try {
+    // Check cache age
+    const timestamp = localStorage.getItem(CACHE_TIMESTAMP_KEY)
+    if (timestamp) {
+      const cacheAge = Date.now() - parseInt(timestamp)
+      // If cache is too old, clear it
+      if (cacheAge > MAX_CACHE_AGE) {
+        localStorage.removeItem(CACHE_KEY)
+        localStorage.removeItem(CACHE_TIMESTAMP_KEY)
+        return
+      }
+    }
+
     const stored = localStorage.getItem(CACHE_KEY)
     if (stored) {
       const data = JSON.parse(stored)
@@ -42,20 +57,19 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 5 * 60 * 1000, // 5 minutes
-            gcTime: 30 * 60 * 1000, // 30 minutes (formerly cacheTime)
-            refetchOnWindowFocus: false,
-            refetchOnReconnect: true,
+            staleTime: 30 * 1000, // 30 seconds - data becomes stale quickly
+            gcTime: 10 * 60 * 1000, // 10 minutes garbage collection
+            refetchOnWindowFocus: true, // Refresh when user comes back
+            refetchOnReconnect: true, // Refresh when back online
+            refetchOnMount: true, // Always check for fresh data on mount
             retry: (failureCount, error) => {
               // Don't retry on auth errors
               if (error instanceof Error && error.message.includes("401")) {
                 return false
               }
-              // Retry up to 3 times for other errors
-              return failureCount < 3
+              return failureCount < 2
             },
-            retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-            // Use cached data while offline
+            retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
             networkMode: "offlineFirst",
           },
           mutations: {
@@ -67,12 +81,16 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
   )
 
   useEffect(() => {
-    // Restore cache on mount
-    restoreQueryCache(queryClient)
+    // Restore cache on mount (only if offline)
+    if (!navigator.onLine) {
+      restoreQueryCache(queryClient)
+    }
 
     // Listen for online/offline events
     const handleOnline = () => {
       onlineManager.setOnline(true)
+      // Invalidate all queries when back online to get fresh data
+      queryClient.invalidateQueries()
     }
 
     const handleOffline = () => {
@@ -84,12 +102,10 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
     window.addEventListener("online", handleOnline)
     window.addEventListener("offline", handleOffline)
 
-    // Persist cache periodically
+    // Persist cache periodically (less frequently)
     const interval = setInterval(() => {
-      if (navigator.onLine) {
-        persistQueryCache(queryClient)
-      }
-    }, 60000) // Every minute
+      persistQueryCache(queryClient)
+    }, 5 * 60 * 1000) // Every 5 minutes
 
     // Persist on page unload
     const handleBeforeUnload = () => {
@@ -108,7 +124,9 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       {children}
-      <ReactQueryDevtools initialIsOpen={false} />
+      {process.env.NODE_ENV === "development" && (
+        <ReactQueryDevtools initialIsOpen={false} />
+      )}
     </QueryClientProvider>
   )
 }
