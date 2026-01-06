@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useSession } from "next-auth/react"
@@ -143,6 +143,16 @@ export default function RvmPage() {
   })
 
   const hasActiveFilters = effectiveMachineClass || effectiveYear || effectiveMonth || dimDbStatus
+
+  // Keep selectedRvm in sync with latest data from query
+  useEffect(() => {
+    if (selectedRvm && rvmUnits) {
+      const updatedRvm = rvmUnits.find((rvm) => rvm.id === selectedRvm.id)
+      if (updatedRvm && JSON.stringify(updatedRvm) !== JSON.stringify(selectedRvm)) {
+        setSelectedRvm(updatedRvm)
+      }
+    }
+  }, [rvmUnits, selectedRvm])
 
   const clearFilters = () => {
     setMachineClass("")
