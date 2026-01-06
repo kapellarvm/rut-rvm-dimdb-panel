@@ -4,5 +4,12 @@
   "buildCommand": "prisma generate && next build",
   "installCommand": "npm install",
   "outputDirectory": ".next",
-  "regions": ["fra1"]
+  "regions": ["fra1"],
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "destination": "https://rut.krvmservice.com/$1",
+      "permanent": true
+    }
+  ]
 }
