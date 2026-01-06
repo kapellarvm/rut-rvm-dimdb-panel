@@ -810,24 +810,24 @@ export default function RvmPage() {
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="font-medium">{router.boxNo}</span>
                               {router.dimDb ? (
-                                <Badge variant="success" className="flex items-center gap-1">
+                                <Badge variant="success" className="flex items-center gap-1.5 py-1">
                                   <Image
                                     src="/icons/dim-db2.png"
                                     alt="DIM-DB"
-                                    width={16}
-                                    height={16}
+                                    width={20}
+                                    height={20}
                                     className="object-contain"
                                   />
                                   {router.dimDb.dimDbCode}
                                 </Badge>
                               ) : (
-                                <Badge variant="warning" className="flex items-center gap-1">
+                                <Badge variant="warning" className="flex items-center gap-1.5 py-1">
                                   <Image
                                     src="/icons/dim-db2.png"
                                     alt="DIM-DB"
-                                    width={16}
-                                    height={16}
-                                    className="object-contain opacity-60"
+                                    width={20}
+                                    height={20}
+                                    className="object-contain opacity-70"
                                   />
                                   Atanmamış
                                 </Badge>
@@ -916,20 +916,20 @@ export default function RvmPage() {
                                   {assigningRouterId === router.id ? (
                                     <div className="flex items-center gap-2 flex-1 min-w-[200px]">
                                       <div className="relative flex-1">
-                                        <div className="absolute left-2 top-1/2 -translate-y-1/2">
+                                        <div className="absolute left-2.5 top-1/2 -translate-y-1/2">
                                           <Image
                                             src="/icons/dim-db2.png"
                                             alt="DIM-DB"
-                                            width={18}
-                                            height={18}
-                                            className="object-contain opacity-60"
+                                            width={22}
+                                            height={22}
+                                            className="object-contain opacity-70"
                                           />
                                         </div>
                                         <Input
                                           value={assignDimDbCode}
                                           onChange={(e) => setAssignDimDbCode(e.target.value)}
                                           placeholder="DIM-DB Kodu"
-                                          className="h-8 pl-8 text-sm"
+                                          className="h-9 pl-10 text-sm"
                                         />
                                       </div>
                                       <Button
@@ -969,8 +969,8 @@ export default function RvmPage() {
                                       <Image
                                         src="/icons/dim-db2.png"
                                         alt="DIM-DB"
-                                        width={18}
-                                        height={18}
+                                        width={22}
+                                        height={22}
                                         className="object-contain"
                                       />
                                       DIM-DB Ata
