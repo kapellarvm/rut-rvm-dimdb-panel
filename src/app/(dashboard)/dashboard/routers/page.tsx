@@ -99,7 +99,7 @@ export default function RoutersPage() {
     queryFn: async () => {
       const params = new URLSearchParams({
         page: page.toString(),
-        pageSize: "20",
+        pageSize: "50",
         search,
         dimDbStatus: dimDbStatus !== "all" ? dimDbStatus : "",
         rvmStatus: rvmStatus !== "all" ? rvmStatus : "",

@@ -12,6 +12,8 @@ import {
   Upload,
   Check,
   X,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react"
 import { PageHeader } from "@/components/shared/page-header"
 import { Button } from "@/components/ui/button"
@@ -69,6 +71,10 @@ export default function DimDbPage() {
   const [newDescription, setNewDescription] = useState("")
   const [bulkCodes, setBulkCodes] = useState("")
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 50
+
   // Fetch DIM-DB list
   const { data: dimDbList, isLoading } = useQuery<DimDbWithCount[]>({
     queryKey: ["dimdb-list", search, statusFilter],
@@ -82,6 +88,13 @@ export default function DimDbPage() {
       return res.json()
     },
   })
+
+  // Pagination logic
+  const totalItems = dimDbList?.length || 0
+  const totalPages = Math.ceil(totalItems / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedDimDbList = dimDbList?.slice(startIndex, endIndex)
 
   // Create DIM-DB mutation
   const createMutation = useMutation({
@@ -295,7 +308,7 @@ export default function DimDbPage() {
                   ))}
                 </TableRow>
               ))
-            ) : dimDbList?.length === 0 ? (
+            ) : paginatedDimDbList?.length === 0 ? (
               <TableRow>
                 <TableCell
                   colSpan={5}
@@ -305,7 +318,7 @@ export default function DimDbPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              dimDbList?.map((dimDb) => (
+              paginatedDimDbList?.map((dimDb) => (
                 <TableRow key={dimDb.id}>
                   <TableCell>
                     <span className="font-mono font-medium">
@@ -366,6 +379,54 @@ export default function DimDbPage() {
         </Table>
         </div>
       </Card>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Card className="p-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-sm text-[var(--muted-foreground)]">
+              Toplam {totalItems} DIM-DB ({startIndex + 1}-{Math.min(endIndex, totalItems)} arası gösteriliyor)
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(1)}
+                disabled={currentPage === 1}
+              >
+                İlk
+              </Button>
+              <Button
+                variant="outline"
+                size="icon-sm"
+                onClick={() => setCurrentPage(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="px-3 py-1 text-sm font-medium">
+                {currentPage} / {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="icon-sm"
+                onClick={() => setCurrentPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={currentPage === totalPages}
+              >
+                Son
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* Create Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>

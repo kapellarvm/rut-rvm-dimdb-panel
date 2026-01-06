@@ -5,7 +5,6 @@ import Image from "next/image"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useSession } from "next-auth/react"
 import {
-  Server,
   Search,
   Plus,
   MoreHorizontal,
@@ -20,6 +19,9 @@ import {
   Wifi,
   QrCode,
   Link2,
+  ChevronLeft,
+  ChevronRight,
+  Server,
 } from "lucide-react"
 import { PageHeader } from "@/components/shared/page-header"
 import { Button } from "@/components/ui/button"
@@ -102,6 +104,10 @@ export default function RvmPage() {
   // Edit router state
   const [editRouterSerialNumber, setEditRouterSerialNumber] = useState("")
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 50
+
   // Fetch filter options
   const { data: filterOptions } = useQuery<RvmFilters>({
     queryKey: ["rvm-filters"],
@@ -141,6 +147,7 @@ export default function RvmPage() {
     setYear("")
     setMonth("")
     setDimDbStatus("")
+    setCurrentPage(1)
   }
 
   // Filter RVM units by DIM-DB status (client-side)
@@ -160,6 +167,16 @@ export default function RvmPage() {
     }
     return true
   })
+
+  // Pagination logic
+  const totalItems = filteredRvmUnits?.length || 0
+  const totalPages = Math.ceil(totalItems / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedRvmUnits = filteredRvmUnits?.slice(startIndex, endIndex)
+
+  // Reset to page 1 when filters change
+  const resetPagination = () => setCurrentPage(1)
 
   // Create RVM mutation
   const createMutation = useMutation({
@@ -653,12 +670,12 @@ export default function RvmPage() {
               <Skeleton className="h-4 w-24" />
             </Card>
           ))
-        ) : filteredRvmUnits?.length === 0 ? (
+        ) : paginatedRvmUnits?.length === 0 ? (
           <div className="col-span-full text-center py-12 text-[var(--muted-foreground)]">
             RVM birimi bulunamadı
           </div>
         ) : (
-          filteredRvmUnits?.map((rvm) => (
+          paginatedRvmUnits?.map((rvm) => (
             <Card
               key={rvm.id}
               className="hover-lift cursor-pointer"
@@ -666,8 +683,14 @@ export default function RvmPage() {
             >
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-orange-500/10 flex items-center justify-center">
-                    <Server className="h-5 w-5 text-orange-500" />
+                  <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center p-1">
+                    <Image
+                      src="/icons/rvm.png"
+                      alt="RVM"
+                      width={36}
+                      height={36}
+                      className="object-contain"
+                    />
                   </div>
                   <div>
                     <CardTitle className="text-lg">{rvm.rvmId}</CardTitle>
@@ -771,6 +794,54 @@ export default function RvmPage() {
           ))
         )}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Card className="p-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-sm text-[var(--muted-foreground)]">
+              Toplam {totalItems} RVM birimi ({startIndex + 1}-{Math.min(endIndex, totalItems)} arası gösteriliyor)
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(1)}
+                disabled={currentPage === 1}
+              >
+                İlk
+              </Button>
+              <Button
+                variant="outline"
+                size="icon-sm"
+                onClick={() => setCurrentPage(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="px-3 py-1 text-sm font-medium">
+                {currentPage} / {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="icon-sm"
+                onClick={() => setCurrentPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={currentPage === totalPages}
+              >
+                Son
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* RVM Detail Dialog */}
       <Dialog
