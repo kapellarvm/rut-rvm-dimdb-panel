@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useSession } from "next-auth/react"
 import {
@@ -18,6 +19,7 @@ import {
   Download,
   Wifi,
   QrCode,
+  Link2,
 } from "lucide-react"
 import { PageHeader } from "@/components/shared/page-header"
 import { Button } from "@/components/ui/button"
@@ -88,6 +90,14 @@ export default function RvmPage() {
   // WiFi QR dialog state
   const [wifiQrDialogOpen, setWifiQrDialogOpen] = useState(false)
   const [wifiQrRouter, setWifiQrRouter] = useState<{ ssid: string; password: string; name: string } | null>(null)
+
+  // Quick assign state for routers in RVM detail
+  const [assigningRouterId, setAssigningRouterId] = useState<string | null>(null)
+  const [assignDimDbCode, setAssignDimDbCode] = useState("")
+
+  // Router assign state
+  const [routerAssignDialogOpen, setRouterAssignDialogOpen] = useState(false)
+  const [newRouterSerialNumber, setNewRouterSerialNumber] = useState("")
 
   // Fetch filter options
   const { data: filterOptions } = useQuery<RvmFilters>({
@@ -232,6 +242,71 @@ export default function RvmPage() {
       toast({
         title: "Hata",
         description: "RVM birimi güncellenemedi.",
+        variant: "destructive",
+      })
+    },
+  })
+
+  // Quick assign DIM-DB to router mutation
+  const assignDimDbMutation = useMutation({
+    mutationFn: async ({ routerId, dimDbCode }: { routerId: string; dimDbCode: string }) => {
+      const res = await fetch(`/api/routers/${routerId}/quick-assign`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dimDbCode }),
+      })
+      if (!res.ok) throw new Error("Failed to assign DIM-DB")
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["rvm-units"] })
+      queryClient.invalidateQueries({ queryKey: ["dimdb-list"] })
+      toast({
+        title: "Başarılı",
+        description: "DIM-DB ataması yapıldı.",
+        variant: "success",
+      })
+      setAssigningRouterId(null)
+      setAssignDimDbCode("")
+    },
+    onError: () => {
+      toast({
+        title: "Hata",
+        description: "DIM-DB ataması başarısız oldu.",
+        variant: "destructive",
+      })
+    },
+  })
+
+  // Assign router to RVM mutation
+  const assignRouterMutation = useMutation({
+    mutationFn: async ({ rvmId, serialNumber }: { rvmId: string; serialNumber: string }) => {
+      const res = await fetch(`/api/rvm/${rvmId}/assign-router`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ serialNumber }),
+      })
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.error || "Failed to assign router")
+      }
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["rvm-units"] })
+      queryClient.invalidateQueries({ queryKey: ["routers"] })
+      toast({
+        title: "Başarılı",
+        description: "Router bu RVM'e atandı.",
+        variant: "success",
+      })
+      setRouterAssignDialogOpen(false)
+      setNewRouterSerialNumber("")
+    },
+    onError: (error) => {
+      toast({
+        title: "Hata",
+        description: error instanceof Error ? error.message : "Router ataması başarısız oldu.",
         variant: "destructive",
       })
     },
@@ -705,10 +780,23 @@ export default function RvmPage() {
               )}
 
               <div className="space-y-4">
-                <h4 className="font-semibold flex items-center gap-2">
-                  <Router className="h-4 w-4 text-blue-500" />
-                  Bağlı Router&apos;lar
-                </h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="font-semibold flex items-center gap-2">
+                    <Router className="h-4 w-4 text-blue-500" />
+                    Bağlı Router&apos;lar
+                  </h4>
+                  {isAdmin && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setRouterAssignDialogOpen(true)}
+                      className="gap-2"
+                    >
+                      <Link2 className="h-4 w-4" />
+                      Router Ata
+                    </Button>
+                  )}
+                </div>
                 {selectedRvm.routers.length === 0 ? (
                   <p className="text-[var(--muted-foreground)]">
                     Bu RVM&apos;e bağlı router yok
@@ -722,11 +810,27 @@ export default function RvmPage() {
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="font-medium">{router.boxNo}</span>
                               {router.dimDb ? (
-                                <Badge variant="success">
+                                <Badge variant="success" className="flex items-center gap-1">
+                                  <Image
+                                    src="/icons/dim-db.png"
+                                    alt="DIM-DB"
+                                    width={12}
+                                    height={12}
+                                    className="object-contain"
+                                  />
                                   {router.dimDb.dimDbCode}
                                 </Badge>
                               ) : (
-                                <Badge variant="warning">Atanmamış</Badge>
+                                <Badge variant="warning" className="flex items-center gap-1">
+                                  <Image
+                                    src="/icons/dim-db.png"
+                                    alt="DIM-DB"
+                                    width={12}
+                                    height={12}
+                                    className="object-contain opacity-60"
+                                  />
+                                  Atanmamış
+                                </Badge>
                               )}
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-sm">
@@ -792,18 +896,89 @@ export default function RvmPage() {
                               </div>
                             </div>
 
-                            {/* WiFi QR Button */}
-                            {router.ssid && router.wifiPassword && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openWifiQrDialog(router)}
-                                className="mt-2 gap-2"
-                              >
-                                <QrCode className="h-4 w-4" />
-                                WiFi QR Kodu
-                              </Button>
-                            )}
+                            {/* Action Buttons */}
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {router.ssid && router.wifiPassword && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => openWifiQrDialog(router)}
+                                  className="gap-2"
+                                >
+                                  <QrCode className="h-4 w-4" />
+                                  WiFi QR Kodu
+                                </Button>
+                              )}
+
+                              {/* DIM-DB Assign Button - only show if not assigned */}
+                              {isAdmin && !router.dimDb && (
+                                <>
+                                  {assigningRouterId === router.id ? (
+                                    <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+                                      <div className="relative flex-1">
+                                        <div className="absolute left-2 top-1/2 -translate-y-1/2">
+                                          <Image
+                                            src="/icons/dim-db.png"
+                                            alt="DIM-DB"
+                                            width={14}
+                                            height={14}
+                                            className="object-contain opacity-60"
+                                          />
+                                        </div>
+                                        <Input
+                                          value={assignDimDbCode}
+                                          onChange={(e) => setAssignDimDbCode(e.target.value)}
+                                          placeholder="DIM-DB Kodu"
+                                          className="h-8 pl-7 text-sm"
+                                        />
+                                      </div>
+                                      <Button
+                                        size="sm"
+                                        className="h-8"
+                                        onClick={() => {
+                                          if (assignDimDbCode) {
+                                            assignDimDbMutation.mutate({
+                                              routerId: router.id,
+                                              dimDbCode: assignDimDbCode,
+                                            })
+                                          }
+                                        }}
+                                        disabled={!assignDimDbCode || assignDimDbMutation.isPending}
+                                      >
+                                        {assignDimDbMutation.isPending ? "..." : "Ata"}
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-8"
+                                        onClick={() => {
+                                          setAssigningRouterId(null)
+                                          setAssignDimDbCode("")
+                                        }}
+                                      >
+                                        <X className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => setAssigningRouterId(router.id)}
+                                      className="gap-2"
+                                    >
+                                      <Image
+                                        src="/icons/dim-db.png"
+                                        alt="DIM-DB"
+                                        width={14}
+                                        height={14}
+                                        className="object-contain"
+                                      />
+                                      DIM-DB Ata
+                                    </Button>
+                                  )}
+                                </>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </Card>
@@ -951,6 +1126,63 @@ export default function RvmPage() {
           routerName={wifiQrRouter.name}
         />
       )}
+
+      {/* Router Assign Dialog */}
+      <Dialog open={routerAssignDialogOpen} onOpenChange={setRouterAssignDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Router className="h-5 w-5 text-blue-500" />
+              Router Ata
+            </DialogTitle>
+            <DialogDescription>
+              {selectedRvm?.rvmId} birimine router atayın
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Router className="h-4 w-4" />
+                Router Seri Numarası
+              </Label>
+              <Input
+                placeholder="Örn: 1234567890"
+                value={newRouterSerialNumber}
+                onChange={(e) => setNewRouterSerialNumber(e.target.value)}
+              />
+              <p className="text-xs text-[var(--muted-foreground)]">
+                Sistemde kayıtlı bir router&apos;ın seri numarasını girin
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setRouterAssignDialogOpen(false)
+                  setNewRouterSerialNumber("")
+                }}
+              >
+                İptal
+              </Button>
+              <Button
+                onClick={() => {
+                  if (selectedRvm && newRouterSerialNumber) {
+                    assignRouterMutation.mutate({
+                      rvmId: selectedRvm.id,
+                      serialNumber: newRouterSerialNumber,
+                    })
+                  }
+                }}
+                disabled={!newRouterSerialNumber || assignRouterMutation.isPending}
+              >
+                {assignRouterMutation.isPending ? "Atanıyor..." : "Ata"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -1,13 +1,12 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import {
   LayoutDashboard,
   Router,
-  Server,
-  Database,
   FileUp,
   Users,
   Settings,
@@ -44,11 +43,19 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { toast } from "@/hooks/use-toast"
 
-const navigation = [
+// Navigation items with custom image icons for RVM and DIM-DB
+type NavItem = {
+  name: string
+  href: string
+  icon?: React.ComponentType<{ className?: string }>
+  image?: string
+}
+
+const navigation: NavItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Router'lar", href: "/dashboard/routers", icon: Router },
-  { name: "RVM Birimleri", href: "/dashboard/rvm", icon: Server },
-  { name: "DIM-DB", href: "/dashboard/dimdb", icon: Database },
+  { name: "RVM Birimleri", href: "/dashboard/rvm", image: "/icons/rvm.png" },
+  { name: "DIM-DB", href: "/dashboard/dimdb", image: "/icons/dim-db.png" },
   { name: "Excel Import", href: "/dashboard/import", icon: FileUp },
   { name: "Aktiviteler", href: "/dashboard/activities", icon: Activity },
 ]
@@ -145,7 +152,17 @@ export function Sidebar() {
                   : "text-[var(--muted-foreground)] hover:bg-[var(--secondary)] hover:text-[var(--foreground)]"
               )}
             >
-              <item.icon className="h-5 w-5" />
+              {item.image ? (
+                <Image
+                  src={item.image}
+                  alt={item.name}
+                  width={20}
+                  height={20}
+                  className="h-5 w-5 object-contain"
+                />
+              ) : item.icon ? (
+                <item.icon className="h-5 w-5" />
+              ) : null}
               {item.name}
             </Link>
           )
