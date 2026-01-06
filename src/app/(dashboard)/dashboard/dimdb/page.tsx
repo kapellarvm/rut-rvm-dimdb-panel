@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useSession } from "next-auth/react"
+import Image from "next/image"
 import {
   Database,
   Search,
@@ -14,6 +15,7 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  Link2,
 } from "lucide-react"
 import { PageHeader } from "@/components/shared/page-header"
 import { Button } from "@/components/ui/button"
@@ -72,6 +74,12 @@ export default function DimDbPage() {
   const [newDimDbCode, setNewDimDbCode] = useState("")
   const [newDescription, setNewDescription] = useState("")
   const [bulkCodes, setBulkCodes] = useState("")
+
+  // Assign RVM state
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false)
+  const [assigningDimDb, setAssigningDimDb] = useState<DimDbWithCount | null>(null)
+  const [assignRvmId, setAssignRvmId] = useState("")
+  const [assignRouterSerial, setAssignRouterSerial] = useState("")
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
@@ -185,6 +193,66 @@ export default function DimDbPage() {
       })
     },
   })
+
+  // Assign RVM mutation
+  const assignRvmMutation = useMutation({
+    mutationFn: async ({ dimDbId, rvmId, routerSerialNumber }: { dimDbId: string; rvmId: string; routerSerialNumber?: string }) => {
+      const res = await fetch(`/api/dimdb/${dimDbId}/assign-rvm`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rvmId, routerSerialNumber }),
+      })
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.error || "Failed to assign RVM")
+      }
+      return res.json()
+    },
+    onSuccess: async (data) => {
+      await clearApiCache()
+      queryClient.invalidateQueries({ queryKey: ["dimdb-list"] })
+      queryClient.invalidateQueries({ queryKey: ["rvm-units"] })
+      queryClient.invalidateQueries({ queryKey: ["routers"] })
+
+      let message = `DIM-DB, RVM ${data.rvmId} üzerindeki ${data.routerSerialNumber} router'a atandı.`
+      if (data.created?.rvm) {
+        message = `RVM "${data.created.rvm}" oluşturuldu. ` + message
+      }
+
+      toast({
+        title: "Başarılı",
+        description: message,
+        variant: "success",
+      })
+      setAssignDialogOpen(false)
+      setAssigningDimDb(null)
+      setAssignRvmId("")
+      setAssignRouterSerial("")
+    },
+    onError: (error) => {
+      toast({
+        title: "Hata",
+        description: error instanceof Error ? error.message : "RVM ataması başarısız oldu.",
+        variant: "destructive",
+      })
+    },
+  })
+
+  const openAssignDialog = (dimDb: DimDbWithCount) => {
+    setAssigningDimDb(dimDb)
+    setAssignRvmId("")
+    setAssignRouterSerial("")
+    setAssignDialogOpen(true)
+  }
+
+  const handleAssignRvm = () => {
+    if (!assigningDimDb || !assignRvmId) return
+    assignRvmMutation.mutate({
+      dimDbId: assigningDimDb.id,
+      rvmId: assignRvmId,
+      routerSerialNumber: assignRouterSerial || undefined,
+    })
+  }
 
   const handleCreate = () => {
     if (!newDimDbCode) return
@@ -366,6 +434,12 @@ export default function DimDbPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          {dimDb.status === "AVAILABLE" && (
+                            <DropdownMenuItem onClick={() => openAssignDialog(dimDb)}>
+                              <Link2 className="mr-2 h-4 w-4" />
+                              RVM'e Ata
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem
                             className="text-[var(--destructive)]"
                             onClick={() => {
@@ -526,6 +600,77 @@ export default function DimDbPage() {
                 disabled={!bulkCodes.trim() || bulkCreateMutation.isPending}
               >
                 {bulkCreateMutation.isPending ? "Ekleniyor..." : "Toplu Ekle"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Assign RVM Dialog */}
+      <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Image
+                src="/icons/dim-db2.png"
+                alt="DIM-DB"
+                width={24}
+                height={24}
+              />
+              RVM&apos;e Ata
+            </DialogTitle>
+            <DialogDescription>
+              {assigningDimDb?.dimDbCode} kodlu DIM-DB&apos;yi bir RVM&apos;e atayın
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="assignRvmId" className="flex items-center gap-2">
+                <Image
+                  src="/icons/rvm.png"
+                  alt="RVM"
+                  width={20}
+                  height={20}
+                />
+                RVM ID *
+              </Label>
+              <Input
+                id="assignRvmId"
+                placeholder="Örn: A12345678"
+                value={assignRvmId}
+                onChange={(e) => setAssignRvmId(e.target.value.toUpperCase())}
+              />
+              <p className="text-xs text-[var(--muted-foreground)]">
+                RVM yoksa otomatik oluşturulur
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="assignRouterSerial">Router Seri No (Opsiyonel)</Label>
+              <Input
+                id="assignRouterSerial"
+                placeholder="Boş bırakılırsa ilk uygun router seçilir"
+                value={assignRouterSerial}
+                onChange={(e) => setAssignRouterSerial(e.target.value.toUpperCase())}
+              />
+              <p className="text-xs text-[var(--muted-foreground)]">
+                Belirli bir router&apos;a atamak için seri numarasını girin
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setAssignDialogOpen(false)}
+              >
+                İptal
+              </Button>
+              <Button
+                onClick={handleAssignRvm}
+                disabled={!assignRvmId || assignRvmMutation.isPending}
+              >
+                {assignRvmMutation.isPending ? "Atanıyor..." : "Ata"}
               </Button>
             </div>
           </div>

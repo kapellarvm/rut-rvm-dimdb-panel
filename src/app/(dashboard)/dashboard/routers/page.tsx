@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useSession } from "next-auth/react"
@@ -122,6 +122,16 @@ export default function RoutersPage() {
     },
     enabled: assignDialogOpen,
   })
+
+  // Keep selectedRouter in sync with latest data from query
+  useEffect(() => {
+    if (selectedRouter && routersData?.data) {
+      const updatedRouter = routersData.data.find((r) => r.id === selectedRouter.id)
+      if (updatedRouter && JSON.stringify(updatedRouter) !== JSON.stringify(selectedRouter)) {
+        setSelectedRouter(updatedRouter)
+      }
+    }
+  }, [routersData, selectedRouter])
 
   // Assign DIM-DB mutation
   const assignMutation = useMutation({
