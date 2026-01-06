@@ -5,7 +5,6 @@ import Image from "next/image"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useSession } from "next-auth/react"
 import {
-  Server,
   Search,
   Plus,
   MoreHorizontal,
@@ -20,6 +19,9 @@ import {
   Wifi,
   QrCode,
   Link2,
+  ChevronLeft,
+  ChevronRight,
+  Server,
 } from "lucide-react"
 import { PageHeader } from "@/components/shared/page-header"
 import { Button } from "@/components/ui/button"
@@ -70,7 +72,7 @@ interface RvmFilters {
 export default function RvmPage() {
   const { data: session } = useSession()
   const queryClient = useQueryClient()
-  const isAdmin = session?.user?.role === "SUPER_ADMIN" || session?.user?.role === "ADMIN"
+  const isAdmin = session?.user?.role === "SUPER_ADMIN" || session?.user?.role === "OPERATOR"
 
   const [search, setSearch] = useState("")
   const [machineClass, setMachineClass] = useState("")
@@ -98,6 +100,13 @@ export default function RvmPage() {
   // Router assign state
   const [routerAssignDialogOpen, setRouterAssignDialogOpen] = useState(false)
   const [newRouterSerialNumber, setNewRouterSerialNumber] = useState("")
+
+  // Edit router state
+  const [editRouterSerialNumber, setEditRouterSerialNumber] = useState("")
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 50
 
   // Fetch filter options
   const { data: filterOptions } = useQuery<RvmFilters>({
@@ -138,6 +147,7 @@ export default function RvmPage() {
     setYear("")
     setMonth("")
     setDimDbStatus("")
+    setCurrentPage(1)
   }
 
   // Filter RVM units by DIM-DB status (client-side)
@@ -157,6 +167,16 @@ export default function RvmPage() {
     }
     return true
   })
+
+  // Pagination logic
+  const totalItems = filteredRvmUnits?.length || 0
+  const totalPages = Math.ceil(totalItems / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedRvmUnits = filteredRvmUnits?.slice(startIndex, endIndex)
+
+  // Reset to page 1 when filters change
+  const resetPagination = () => setCurrentPage(1)
 
   // Create RVM mutation
   const createMutation = useMutation({
@@ -307,6 +327,77 @@ export default function RvmPage() {
       toast({
         title: "Hata",
         description: error instanceof Error ? error.message : "Router ataması başarısız oldu.",
+        variant: "destructive",
+      })
+    },
+  })
+
+  // Remove router from RVM mutation
+  const removeRouterMutation = useMutation({
+    mutationFn: async (routerId: string) => {
+      const res = await fetch(`/api/routers/${routerId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rvmUnitId: null }),
+      })
+      if (!res.ok) throw new Error("Failed to remove router")
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["rvm-units"] })
+      queryClient.invalidateQueries({ queryKey: ["routers"] })
+      toast({
+        title: "Başarılı",
+        description: "Router bu RVM'den kaldırıldı.",
+        variant: "success",
+      })
+    },
+    onError: () => {
+      toast({
+        title: "Hata",
+        description: "Router kaldırılamadı.",
+        variant: "destructive",
+      })
+    },
+  })
+
+  // Change router mutation (remove old, assign new)
+  const changeRouterMutation = useMutation({
+    mutationFn: async ({ rvmId, oldRouterId, newSerialNumber }: { rvmId: string; oldRouterId: string; newSerialNumber: string }) => {
+      // First remove old router
+      await fetch(`/api/routers/${oldRouterId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rvmUnitId: null }),
+      })
+      // Then assign new router
+      const res = await fetch(`/api/rvm/${rvmId}/assign-router`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ serialNumber: newSerialNumber }),
+      })
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.error || "Failed to change router")
+      }
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["rvm-units"] })
+      queryClient.invalidateQueries({ queryKey: ["routers"] })
+      toast({
+        title: "Başarılı",
+        description: "Router değiştirildi.",
+        variant: "success",
+      })
+      setEditDialogOpen(false)
+      setEditingRvm(null)
+      setEditRouterSerialNumber("")
+    },
+    onError: (error) => {
+      toast({
+        title: "Hata",
+        description: error instanceof Error ? error.message : "Router değiştirilemedi.",
         variant: "destructive",
       })
     },
@@ -579,12 +670,12 @@ export default function RvmPage() {
               <Skeleton className="h-4 w-24" />
             </Card>
           ))
-        ) : filteredRvmUnits?.length === 0 ? (
+        ) : paginatedRvmUnits?.length === 0 ? (
           <div className="col-span-full text-center py-12 text-[var(--muted-foreground)]">
             RVM birimi bulunamadı
           </div>
         ) : (
-          filteredRvmUnits?.map((rvm) => (
+          paginatedRvmUnits?.map((rvm) => (
             <Card
               key={rvm.id}
               className="hover-lift cursor-pointer"
@@ -592,8 +683,14 @@ export default function RvmPage() {
             >
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-orange-500/10 flex items-center justify-center">
-                    <Server className="h-5 w-5 text-orange-500" />
+                  <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center p-1">
+                    <Image
+                      src="/icons/rvm.png"
+                      alt="RVM"
+                      width={36}
+                      height={36}
+                      className="object-contain"
+                    />
                   </div>
                   <div>
                     <CardTitle className="text-lg">{rvm.rvmId}</CardTitle>
@@ -698,6 +795,54 @@ export default function RvmPage() {
         )}
       </div>
 
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Card className="p-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-sm text-[var(--muted-foreground)]">
+              Toplam {totalItems} RVM birimi ({startIndex + 1}-{Math.min(endIndex, totalItems)} arası gösteriliyor)
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(1)}
+                disabled={currentPage === 1}
+              >
+                İlk
+              </Button>
+              <Button
+                variant="outline"
+                size="icon-sm"
+                onClick={() => setCurrentPage(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="px-3 py-1 text-sm font-medium">
+                {currentPage} / {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="icon-sm"
+                onClick={() => setCurrentPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={currentPage === totalPages}
+              >
+                Son
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* RVM Detail Dialog */}
       <Dialog
         open={!!selectedRvm}
@@ -785,7 +930,8 @@ export default function RvmPage() {
                     <Router className="h-4 w-4 text-blue-500" />
                     Bağlı Router&apos;lar
                   </h4>
-                  {isAdmin && (
+                  {/* Router Ata butonu sadece router yoksa göster */}
+                  {isAdmin && selectedRvm.routers.length === 0 && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -1090,6 +1236,67 @@ export default function RvmPage() {
               />
             </div>
 
+            {/* Router Değiştirme Bölümü */}
+            {editingRvm && editingRvm.routers && editingRvm.routers.length > 0 && (
+              <div className="border-t border-[var(--border)] pt-4 space-y-3">
+                <Label className="flex items-center gap-2">
+                  <Router className="h-4 w-4" />
+                  Bağlı Router
+                </Label>
+                <div className="p-3 bg-[var(--secondary)]/50 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">{editingRvm.routers[0].boxNo}</p>
+                      <p className="text-xs text-[var(--muted-foreground)] font-mono">
+                        S/N: {editingRvm.routers[0].serialNumber}
+                      </p>
+                    </div>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => {
+                        if (confirm("Router'ı bu RVM'den kaldırmak istediğinize emin misiniz?")) {
+                          removeRouterMutation.mutate(editingRvm.routers[0].id)
+                          setEditDialogOpen(false)
+                        }
+                      }}
+                      disabled={removeRouterMutation.isPending}
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Kaldır
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="editRouterSerial" className="text-sm">
+                    Yeni Router ile Değiştir
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="editRouterSerial"
+                      placeholder="Yeni router seri numarası"
+                      value={editRouterSerialNumber}
+                      onChange={(e) => setEditRouterSerialNumber(e.target.value)}
+                    />
+                    <Button
+                      onClick={() => {
+                        if (editRouterSerialNumber && editingRvm) {
+                          changeRouterMutation.mutate({
+                            rvmId: editingRvm.id,
+                            oldRouterId: editingRvm.routers[0].id,
+                            newSerialNumber: editRouterSerialNumber,
+                          })
+                        }
+                      }}
+                      disabled={!editRouterSerialNumber || changeRouterMutation.isPending}
+                    >
+                      {changeRouterMutation.isPending ? "..." : "Değiştir"}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-end gap-2 pt-4">
               <Button
                 variant="outline"
@@ -1098,6 +1305,7 @@ export default function RvmPage() {
                   setEditingRvm(null)
                   setEditRvmName("")
                   setEditRvmLocation("")
+                  setEditRouterSerialNumber("")
                 }}
               >
                 İptal

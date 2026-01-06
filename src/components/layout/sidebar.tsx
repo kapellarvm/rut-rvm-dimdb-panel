@@ -266,7 +266,7 @@ export function Sidebar() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{session?.user?.name}</p>
                     <p className="text-xs text-[var(--muted-foreground)]">
-                      {session?.user?.role === "SUPER_ADMIN" ? "Süper Admin" : session?.user?.role === "ADMIN" ? "Admin" : "İzleyici"}
+                      {session?.user?.role === "SUPER_ADMIN" ? "Süper Admin" : session?.user?.role === "OPERATOR" ? "Operatör" : "İzleyici"}
                     </p>
                   </div>
                 </div>
@@ -325,7 +325,7 @@ export function Sidebar() {
                 <div className="flex-1 text-left">
                   <p className="text-sm font-medium">{session?.user?.name}</p>
                   <p className="text-xs text-[var(--muted-foreground)]">
-                    {session?.user?.role === "SUPER_ADMIN" ? "Süper Admin" : "İzleyici"}
+                    {session?.user?.role === "SUPER_ADMIN" ? "Süper Admin" : session?.user?.role === "OPERATOR" ? "Operatör" : "İzleyici"}
                   </p>
                 </div>
               </button>

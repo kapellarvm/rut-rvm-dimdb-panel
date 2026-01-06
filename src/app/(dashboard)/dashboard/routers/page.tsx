@@ -70,7 +70,7 @@ interface RoutersResponse {
 export default function RoutersPage() {
   const { data: session } = useSession()
   const queryClient = useQueryClient()
-  const isAdmin = session?.user?.role === "SUPER_ADMIN" || session?.user?.role === "ADMIN"
+  const isAdmin = session?.user?.role === "SUPER_ADMIN" || session?.user?.role === "OPERATOR"
 
   const [search, setSearch] = useState("")
   const [dimDbStatus, setDimDbStatus] = useState("all")
@@ -99,7 +99,7 @@ export default function RoutersPage() {
     queryFn: async () => {
       const params = new URLSearchParams({
         page: page.toString(),
-        pageSize: "20",
+        pageSize: "50",
         search,
         dimDbStatus: dimDbStatus !== "all" ? dimDbStatus : "",
         rvmStatus: rvmStatus !== "all" ? rvmStatus : "",
