@@ -156,9 +156,9 @@ export function Sidebar() {
                 <Image
                   src={item.image}
                   alt={item.name}
-                  width={24}
-                  height={24}
-                  className="h-6 w-6 object-contain"
+                  width={28}
+                  height={28}
+                  className="h-7 w-7 object-contain"
                 />
               ) : item.icon ? (
                 <item.icon className="h-5 w-5" />
