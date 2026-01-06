@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useSession } from "next-auth/react"
 import {
@@ -829,27 +830,65 @@ export default function RoutersPage() {
                   <h4 className="font-semibold mb-3">RVM & DIM-DB Atama</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-sm text-[var(--muted-foreground)]">
+                      <label className="text-sm text-[var(--muted-foreground)] flex items-center gap-2">
+                        <Image
+                          src="/icons/rvm.png"
+                          alt="RVM"
+                          width={18}
+                          height={18}
+                          className="object-contain"
+                        />
                         RVM ID
                       </label>
-                      <Input
-                        value={editRvmId}
-                        onChange={(e) => setEditRvmId(e.target.value)}
-                        placeholder="Örn: KPL0402511010"
-                      />
+                      <div className="relative">
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                          <Image
+                            src="/icons/rvm.png"
+                            alt="RVM"
+                            width={16}
+                            height={16}
+                            className="object-contain opacity-60"
+                          />
+                        </div>
+                        <Input
+                          value={editRvmId}
+                          onChange={(e) => setEditRvmId(e.target.value)}
+                          placeholder="Örn: KPL0402511010"
+                          className="pl-9"
+                        />
+                      </div>
                       <p className="text-xs text-[var(--muted-foreground)]">
                         Yoksa otomatik oluşturulur
                       </p>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm text-[var(--muted-foreground)]">
+                      <label className="text-sm text-[var(--muted-foreground)] flex items-center gap-2">
+                        <Image
+                          src="/icons/dim-db.png"
+                          alt="DIM-DB"
+                          width={18}
+                          height={18}
+                          className="object-contain"
+                        />
                         DIM-DB Kodu
                       </label>
-                      <Input
-                        value={editDimDbCode}
-                        onChange={(e) => setEditDimDbCode(e.target.value)}
-                        placeholder="Örn: DIMDB-2024-001"
-                      />
+                      <div className="relative">
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                          <Image
+                            src="/icons/dim-db.png"
+                            alt="DIM-DB"
+                            width={16}
+                            height={16}
+                            className="object-contain opacity-60"
+                          />
+                        </div>
+                        <Input
+                          value={editDimDbCode}
+                          onChange={(e) => setEditDimDbCode(e.target.value)}
+                          placeholder="Örn: DIMDB-2024-001"
+                          className="pl-9"
+                        />
+                      </div>
                       <p className="text-xs text-[var(--muted-foreground)]">
                         Yoksa otomatik oluşturulur
                       </p>
