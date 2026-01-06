@@ -812,10 +812,10 @@ export default function RvmPage() {
                               {router.dimDb ? (
                                 <Badge variant="success" className="flex items-center gap-1">
                                   <Image
-                                    src="/icons/dim-db.png"
+                                    src="/icons/dim-db2.png"
                                     alt="DIM-DB"
-                                    width={12}
-                                    height={12}
+                                    width={16}
+                                    height={16}
                                     className="object-contain"
                                   />
                                   {router.dimDb.dimDbCode}
@@ -823,10 +823,10 @@ export default function RvmPage() {
                               ) : (
                                 <Badge variant="warning" className="flex items-center gap-1">
                                   <Image
-                                    src="/icons/dim-db.png"
+                                    src="/icons/dim-db2.png"
                                     alt="DIM-DB"
-                                    width={12}
-                                    height={12}
+                                    width={16}
+                                    height={16}
                                     className="object-contain opacity-60"
                                   />
                                   Atanmamış
@@ -918,10 +918,10 @@ export default function RvmPage() {
                                       <div className="relative flex-1">
                                         <div className="absolute left-2 top-1/2 -translate-y-1/2">
                                           <Image
-                                            src="/icons/dim-db.png"
+                                            src="/icons/dim-db2.png"
                                             alt="DIM-DB"
-                                            width={14}
-                                            height={14}
+                                            width={18}
+                                            height={18}
                                             className="object-contain opacity-60"
                                           />
                                         </div>
@@ -929,7 +929,7 @@ export default function RvmPage() {
                                           value={assignDimDbCode}
                                           onChange={(e) => setAssignDimDbCode(e.target.value)}
                                           placeholder="DIM-DB Kodu"
-                                          className="h-8 pl-7 text-sm"
+                                          className="h-8 pl-8 text-sm"
                                         />
                                       </div>
                                       <Button
@@ -967,10 +967,10 @@ export default function RvmPage() {
                                       className="gap-2"
                                     >
                                       <Image
-                                        src="/icons/dim-db.png"
+                                        src="/icons/dim-db2.png"
                                         alt="DIM-DB"
-                                        width={14}
-                                        height={14}
+                                        width={18}
+                                        height={18}
                                         className="object-contain"
                                       />
                                       DIM-DB Ata

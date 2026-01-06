@@ -834,8 +834,8 @@ export default function RoutersPage() {
                         <Image
                           src="/icons/rvm.png"
                           alt="RVM"
-                          width={18}
-                          height={18}
+                          width={22}
+                          height={22}
                           className="object-contain"
                         />
                         RVM ID
@@ -845,8 +845,8 @@ export default function RoutersPage() {
                           <Image
                             src="/icons/rvm.png"
                             alt="RVM"
-                            width={16}
-                            height={16}
+                            width={20}
+                            height={20}
                             className="object-contain opacity-60"
                           />
                         </div>
@@ -854,7 +854,7 @@ export default function RoutersPage() {
                           value={editRvmId}
                           onChange={(e) => setEditRvmId(e.target.value)}
                           placeholder="Örn: KPL0402511010"
-                          className="pl-9"
+                          className="pl-10"
                         />
                       </div>
                       <p className="text-xs text-[var(--muted-foreground)]">
@@ -864,10 +864,10 @@ export default function RoutersPage() {
                     <div className="space-y-2">
                       <label className="text-sm text-[var(--muted-foreground)] flex items-center gap-2">
                         <Image
-                          src="/icons/dim-db.png"
+                          src="/icons/dim-db2.png"
                           alt="DIM-DB"
-                          width={18}
-                          height={18}
+                          width={22}
+                          height={22}
                           className="object-contain"
                         />
                         DIM-DB Kodu
@@ -875,10 +875,10 @@ export default function RoutersPage() {
                       <div className="relative">
                         <div className="absolute left-3 top-1/2 -translate-y-1/2">
                           <Image
-                            src="/icons/dim-db.png"
+                            src="/icons/dim-db2.png"
                             alt="DIM-DB"
-                            width={16}
-                            height={16}
+                            width={20}
+                            height={20}
                             className="object-contain opacity-60"
                           />
                         </div>
@@ -886,7 +886,7 @@ export default function RoutersPage() {
                           value={editDimDbCode}
                           onChange={(e) => setEditDimDbCode(e.target.value)}
                           placeholder="Örn: DIMDB-2024-001"
-                          className="pl-9"
+                          className="pl-10"
                         />
                       </div>
                       <p className="text-xs text-[var(--muted-foreground)]">

@@ -55,7 +55,7 @@ const navigation: NavItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Router'lar", href: "/dashboard/routers", icon: Router },
   { name: "RVM Birimleri", href: "/dashboard/rvm", image: "/icons/rvm.png" },
-  { name: "DIM-DB", href: "/dashboard/dimdb", image: "/icons/dim-db.png" },
+  { name: "DIM-DB", href: "/dashboard/dimdb", image: "/icons/dim-db2.png" },
   { name: "Excel Import", href: "/dashboard/import", icon: FileUp },
   { name: "Aktiviteler", href: "/dashboard/activities", icon: Activity },
 ]
@@ -156,9 +156,9 @@ export function Sidebar() {
                 <Image
                   src={item.image}
                   alt={item.name}
-                  width={20}
-                  height={20}
-                  className="h-5 w-5 object-contain"
+                  width={24}
+                  height={24}
+                  className="h-6 w-6 object-contain"
                 />
               ) : item.icon ? (
                 <item.icon className="h-5 w-5" />
