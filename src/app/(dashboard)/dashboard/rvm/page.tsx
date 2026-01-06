@@ -99,6 +99,9 @@ export default function RvmPage() {
   const [routerAssignDialogOpen, setRouterAssignDialogOpen] = useState(false)
   const [newRouterSerialNumber, setNewRouterSerialNumber] = useState("")
 
+  // Edit router state
+  const [editRouterSerialNumber, setEditRouterSerialNumber] = useState("")
+
   // Fetch filter options
   const { data: filterOptions } = useQuery<RvmFilters>({
     queryKey: ["rvm-filters"],
@@ -307,6 +310,77 @@ export default function RvmPage() {
       toast({
         title: "Hata",
         description: error instanceof Error ? error.message : "Router ataması başarısız oldu.",
+        variant: "destructive",
+      })
+    },
+  })
+
+  // Remove router from RVM mutation
+  const removeRouterMutation = useMutation({
+    mutationFn: async (routerId: string) => {
+      const res = await fetch(`/api/routers/${routerId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rvmUnitId: null }),
+      })
+      if (!res.ok) throw new Error("Failed to remove router")
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["rvm-units"] })
+      queryClient.invalidateQueries({ queryKey: ["routers"] })
+      toast({
+        title: "Başarılı",
+        description: "Router bu RVM'den kaldırıldı.",
+        variant: "success",
+      })
+    },
+    onError: () => {
+      toast({
+        title: "Hata",
+        description: "Router kaldırılamadı.",
+        variant: "destructive",
+      })
+    },
+  })
+
+  // Change router mutation (remove old, assign new)
+  const changeRouterMutation = useMutation({
+    mutationFn: async ({ rvmId, oldRouterId, newSerialNumber }: { rvmId: string; oldRouterId: string; newSerialNumber: string }) => {
+      // First remove old router
+      await fetch(`/api/routers/${oldRouterId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rvmUnitId: null }),
+      })
+      // Then assign new router
+      const res = await fetch(`/api/rvm/${rvmId}/assign-router`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ serialNumber: newSerialNumber }),
+      })
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.error || "Failed to change router")
+      }
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["rvm-units"] })
+      queryClient.invalidateQueries({ queryKey: ["routers"] })
+      toast({
+        title: "Başarılı",
+        description: "Router değiştirildi.",
+        variant: "success",
+      })
+      setEditDialogOpen(false)
+      setEditingRvm(null)
+      setEditRouterSerialNumber("")
+    },
+    onError: (error) => {
+      toast({
+        title: "Hata",
+        description: error instanceof Error ? error.message : "Router değiştirilemedi.",
         variant: "destructive",
       })
     },
@@ -785,7 +859,8 @@ export default function RvmPage() {
                     <Router className="h-4 w-4 text-blue-500" />
                     Bağlı Router&apos;lar
                   </h4>
-                  {isAdmin && (
+                  {/* Router Ata butonu sadece router yoksa göster */}
+                  {isAdmin && selectedRvm.routers.length === 0 && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -1090,6 +1165,67 @@ export default function RvmPage() {
               />
             </div>
 
+            {/* Router Değiştirme Bölümü */}
+            {editingRvm && editingRvm.routers && editingRvm.routers.length > 0 && (
+              <div className="border-t border-[var(--border)] pt-4 space-y-3">
+                <Label className="flex items-center gap-2">
+                  <Router className="h-4 w-4" />
+                  Bağlı Router
+                </Label>
+                <div className="p-3 bg-[var(--secondary)]/50 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">{editingRvm.routers[0].boxNo}</p>
+                      <p className="text-xs text-[var(--muted-foreground)] font-mono">
+                        S/N: {editingRvm.routers[0].serialNumber}
+                      </p>
+                    </div>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => {
+                        if (confirm("Router'ı bu RVM'den kaldırmak istediğinize emin misiniz?")) {
+                          removeRouterMutation.mutate(editingRvm.routers[0].id)
+                          setEditDialogOpen(false)
+                        }
+                      }}
+                      disabled={removeRouterMutation.isPending}
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Kaldır
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="editRouterSerial" className="text-sm">
+                    Yeni Router ile Değiştir
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="editRouterSerial"
+                      placeholder="Yeni router seri numarası"
+                      value={editRouterSerialNumber}
+                      onChange={(e) => setEditRouterSerialNumber(e.target.value)}
+                    />
+                    <Button
+                      onClick={() => {
+                        if (editRouterSerialNumber && editingRvm) {
+                          changeRouterMutation.mutate({
+                            rvmId: editingRvm.id,
+                            oldRouterId: editingRvm.routers[0].id,
+                            newSerialNumber: editRouterSerialNumber,
+                          })
+                        }
+                      }}
+                      disabled={!editRouterSerialNumber || changeRouterMutation.isPending}
+                    >
+                      {changeRouterMutation.isPending ? "..." : "Değiştir"}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-end gap-2 pt-4">
               <Button
                 variant="outline"
@@ -1098,6 +1234,7 @@ export default function RvmPage() {
                   setEditingRvm(null)
                   setEditRvmName("")
                   setEditRvmLocation("")
+                  setEditRouterSerialNumber("")
                 }}
               >
                 İptal
