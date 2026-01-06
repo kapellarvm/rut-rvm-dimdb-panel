@@ -81,21 +81,31 @@ export async function POST(
       dimDbId = dimDb.id
     }
 
+    // Build update data - only include fields that were provided
+    const updateData: { rvmUnitId?: string | null; dimDbId?: string | null } = {}
+
+    // Only update rvmUnitId if rvmId was explicitly provided in the request
+    if (rvmId !== undefined) {
+      updateData.rvmUnitId = rvmUnitId
+    }
+
+    // Only update dimDbId if dimDbCode was explicitly provided in the request
+    if (dimDbCode !== undefined) {
+      updateData.dimDbId = dimDbId
+    }
+
     // Update router with new assignments
     const updatedRouter = await prisma.router.update({
       where: { id },
-      data: {
-        rvmUnitId,
-        dimDbId,
-      },
+      data: updateData,
       include: {
         rvmUnit: true,
         dimDb: true,
       },
     })
 
-    // If previous DIM-DB was assigned and now unassigned, update its status
-    if (router.dimDbId && router.dimDbId !== dimDbId) {
+    // If previous DIM-DB was assigned and now changed/unassigned, update its status
+    if (dimDbCode !== undefined && router.dimDbId && router.dimDbId !== dimDbId) {
       // Check if any other router uses this DIM-DB
       const otherRouters = await prisma.router.count({
         where: {
