@@ -59,7 +59,7 @@ interface DimDbWithCount extends DimDb {
 export default function DimDbPage() {
   const { data: session } = useSession()
   const queryClient = useQueryClient()
-  const isAdmin = session?.user?.role === "SUPER_ADMIN" || session?.user?.role === "ADMIN"
+  const isAdmin = session?.user?.role === "SUPER_ADMIN" || session?.user?.role === "OPERATOR"
 
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")

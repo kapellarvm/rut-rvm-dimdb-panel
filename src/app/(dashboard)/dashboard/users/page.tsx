@@ -55,7 +55,7 @@ interface User {
   id: string
   email: string
   name: string
-  role: "SUPER_ADMIN" | "ADMIN" | "VIEWER"
+  role: "SUPER_ADMIN" | "OPERATOR" | "VIEWER"
   createdAt: string
   lastLogin: string | null
 }
@@ -71,7 +71,7 @@ export default function UsersPage() {
     email: "",
     password: "",
     name: "",
-    role: "VIEWER" as "SUPER_ADMIN" | "ADMIN" | "VIEWER",
+    role: "VIEWER" as "SUPER_ADMIN" | "OPERATOR" | "VIEWER",
   })
 
   // Fetch users
@@ -304,10 +304,10 @@ export default function UsersPage() {
                         <Shield className="h-3 w-3" />
                         Süper Admin
                       </Badge>
-                    ) : user.role === "ADMIN" ? (
+                    ) : user.role === "OPERATOR" ? (
                       <Badge variant="primary" className="flex items-center gap-1 w-fit whitespace-nowrap">
                         <Settings className="h-3 w-3" />
-                        Admin
+                        Operatör
                       </Badge>
                     ) : (
                       <Badge variant="secondary" className="flex items-center gap-1 w-fit whitespace-nowrap">
@@ -429,7 +429,7 @@ export default function UsersPage() {
               <Label htmlFor="role">Rol *</Label>
               <Select
                 value={formData.role}
-                onValueChange={(value: "SUPER_ADMIN" | "ADMIN" | "VIEWER") =>
+                onValueChange={(value: "SUPER_ADMIN" | "OPERATOR" | "VIEWER") =>
                   setFormData({ ...formData, role: value })
                 }
               >
@@ -438,7 +438,7 @@ export default function UsersPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="SUPER_ADMIN">Süper Admin</SelectItem>
-                  <SelectItem value="ADMIN">Admin</SelectItem>
+                  <SelectItem value="OPERATOR">Operatör</SelectItem>
                   <SelectItem value="VIEWER">İzleyici</SelectItem>
                 </SelectContent>
               </Select>

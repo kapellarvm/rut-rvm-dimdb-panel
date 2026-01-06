@@ -70,7 +70,7 @@ interface RoutersResponse {
 export default function RoutersPage() {
   const { data: session } = useSession()
   const queryClient = useQueryClient()
-  const isAdmin = session?.user?.role === "SUPER_ADMIN" || session?.user?.role === "ADMIN"
+  const isAdmin = session?.user?.role === "SUPER_ADMIN" || session?.user?.role === "OPERATOR"
 
   const [search, setSearch] = useState("")
   const [dimDbStatus, setDimDbStatus] = useState("all")
