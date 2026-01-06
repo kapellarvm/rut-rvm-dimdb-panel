@@ -53,6 +53,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { RefreshButton } from "@/components/shared/refresh-button"
 import { toast } from "@/hooks/use-toast"
+import { clearApiCache } from "@/lib/cache-utils"
 import type { DimDb } from "@/types"
 
 interface DimDbWithCount extends DimDb {
@@ -108,7 +109,8 @@ export default function DimDbPage() {
       if (!res.ok) throw new Error("Failed to create DIM-DB")
       return res.json()
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await clearApiCache()
       queryClient.invalidateQueries({ queryKey: ["dimdb-list"] })
       toast({
         title: "Başarılı",
@@ -139,7 +141,8 @@ export default function DimDbPage() {
       if (!res.ok) throw new Error("Failed to bulk create DIM-DB")
       return res.json()
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
+      await clearApiCache()
       queryClient.invalidateQueries({ queryKey: ["dimdb-list"] })
       toast({
         title: "Başarılı",
@@ -165,7 +168,8 @@ export default function DimDbPage() {
       if (!res.ok) throw new Error("Failed to delete DIM-DB")
       return res.json()
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await clearApiCache()
       queryClient.invalidateQueries({ queryKey: ["dimdb-list"] })
       toast({
         title: "Başarılı",
