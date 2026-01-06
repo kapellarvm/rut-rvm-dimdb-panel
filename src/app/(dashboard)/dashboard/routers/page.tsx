@@ -52,6 +52,8 @@ import {
 import { PasswordField } from "@/components/shared/password-field"
 import { CopyButton } from "@/components/shared/copy-button"
 import { WifiQrDialog } from "@/components/shared/wifi-qr-dialog"
+import { RefreshButton } from "@/components/shared/refresh-button"
+import { clearApiCache } from "@/lib/cache-utils"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "@/hooks/use-toast"
 import { formatMacAddress } from "@/lib/utils"
@@ -94,7 +96,7 @@ export default function RoutersPage() {
   const [wifiQrRouter, setWifiQrRouter] = useState<{ ssid: string; password: string; name: string } | null>(null)
 
   // Fetch routers
-  const { data: routersData, isLoading } = useQuery<RoutersResponse>({
+  const { data: routersData, isLoading, isFetching, dataUpdatedAt, refetch } = useQuery<RoutersResponse>({
     queryKey: ["routers", search, dimDbStatus, rvmStatus, page],
     queryFn: async () => {
       const params = new URLSearchParams({
@@ -138,7 +140,8 @@ export default function RoutersPage() {
       if (!res.ok) throw new Error("Failed to assign DIM-DB")
       return res.json()
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await clearApiCache()
       queryClient.invalidateQueries({ queryKey: ["routers"] })
       queryClient.invalidateQueries({ queryKey: ["dimdb-list"] })
       toast({
@@ -167,7 +170,8 @@ export default function RoutersPage() {
       if (!res.ok) throw new Error("Failed to delete router")
       return res.json()
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await clearApiCache()
       queryClient.invalidateQueries({ queryKey: ["routers"] })
       toast({
         title: "Başarılı",
@@ -203,7 +207,8 @@ export default function RoutersPage() {
       if (!res.ok) throw new Error("Failed to quick assign")
       return res.json()
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
+      await clearApiCache()
       queryClient.invalidateQueries({ queryKey: ["routers"] })
       queryClient.invalidateQueries({ queryKey: ["rvm-units"] })
       queryClient.invalidateQueries({ queryKey: ["dimdb-list"] })
@@ -257,7 +262,8 @@ export default function RoutersPage() {
       if (!res.ok) throw new Error("Failed to update passwords")
       return res.json()
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await clearApiCache()
       queryClient.invalidateQueries({ queryKey: ["routers"] })
       toast({
         title: "Başarılı",
@@ -341,7 +347,14 @@ export default function RoutersPage() {
       <PageHeader
         title="Router'lar"
         description="Sistemdeki tüm router'ları yönetin"
-      />
+      >
+        <RefreshButton
+          onClick={() => refetch()}
+          isLoading={isLoading}
+          isFetching={isFetching}
+          dataUpdatedAt={dataUpdatedAt}
+        />
+      </PageHeader>
 
       {/* Filters */}
       <Card className="p-4">

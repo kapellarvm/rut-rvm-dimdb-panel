@@ -51,7 +51,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Skeleton } from "@/components/ui/skeleton"
+import { RefreshButton } from "@/components/shared/refresh-button"
 import { toast } from "@/hooks/use-toast"
+import { clearApiCache } from "@/lib/cache-utils"
 import type { DimDb } from "@/types"
 
 interface DimDbWithCount extends DimDb {
@@ -76,7 +78,7 @@ export default function DimDbPage() {
   const itemsPerPage = 50
 
   // Fetch DIM-DB list
-  const { data: dimDbList, isLoading } = useQuery<DimDbWithCount[]>({
+  const { data: dimDbList, isLoading, isFetching, dataUpdatedAt, refetch } = useQuery<DimDbWithCount[]>({
     queryKey: ["dimdb-list", search, statusFilter],
     queryFn: async () => {
       const params = new URLSearchParams({
@@ -107,7 +109,8 @@ export default function DimDbPage() {
       if (!res.ok) throw new Error("Failed to create DIM-DB")
       return res.json()
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await clearApiCache()
       queryClient.invalidateQueries({ queryKey: ["dimdb-list"] })
       toast({
         title: "Başarılı",
@@ -138,7 +141,8 @@ export default function DimDbPage() {
       if (!res.ok) throw new Error("Failed to bulk create DIM-DB")
       return res.json()
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
+      await clearApiCache()
       queryClient.invalidateQueries({ queryKey: ["dimdb-list"] })
       toast({
         title: "Başarılı",
@@ -164,7 +168,8 @@ export default function DimDbPage() {
       if (!res.ok) throw new Error("Failed to delete DIM-DB")
       return res.json()
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await clearApiCache()
       queryClient.invalidateQueries({ queryKey: ["dimdb-list"] })
       toast({
         title: "Başarılı",
@@ -208,18 +213,26 @@ export default function DimDbPage() {
         title="DIM-DB Yönetimi"
         description="DIM-DB ID'lerini yönetin ve atayın"
       >
-        {isAdmin && (
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setBulkDialogOpen(true)}>
-              <Upload className="mr-2 h-4 w-4" />
-              Toplu Ekle
-            </Button>
-            <Button onClick={() => setCreateDialogOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Yeni DIM-DB
-            </Button>
-          </div>
-        )}
+        <div className="flex gap-2">
+          <RefreshButton
+            onClick={() => refetch()}
+            isLoading={isLoading}
+            isFetching={isFetching}
+            dataUpdatedAt={dataUpdatedAt}
+          />
+          {isAdmin && (
+            <>
+              <Button variant="outline" onClick={() => setBulkDialogOpen(true)}>
+                <Upload className="mr-2 h-4 w-4" />
+                Toplu Ekle
+              </Button>
+              <Button onClick={() => setCreateDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Yeni DIM-DB
+              </Button>
+            </>
+          )}
+        </div>
       </PageHeader>
 
       {/* Stats */}

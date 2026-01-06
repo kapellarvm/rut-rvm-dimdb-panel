@@ -53,7 +53,9 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { PasswordField } from "@/components/shared/password-field"
 import { CopyButton } from "@/components/shared/copy-button"
 import { WifiQrDialog } from "@/components/shared/wifi-qr-dialog"
+import { RefreshButton } from "@/components/shared/refresh-button"
 import { toast } from "@/hooks/use-toast"
+import { clearApiCache } from "@/lib/cache-utils"
 import { formatMacAddress, formatMonth, parseRvmId } from "@/lib/utils"
 import type { RvmUnit, Router as RouterType, DimDb } from "@/types"
 import * as XLSX from "xlsx"
@@ -124,7 +126,7 @@ export default function RvmPage() {
   const effectiveMonth = month === "__all__" ? "" : month
 
   // Fetch RVM units
-  const { data: rvmUnits, isLoading } = useQuery<RvmWithRouters[]>({
+  const { data: rvmUnits, isLoading, isFetching, dataUpdatedAt, refetch } = useQuery<RvmWithRouters[]>({
     queryKey: ["rvm-units", search, effectiveMachineClass, effectiveYear, effectiveMonth],
     queryFn: async () => {
       const params = new URLSearchParams({
@@ -189,7 +191,8 @@ export default function RvmPage() {
       if (!res.ok) throw new Error("Failed to create RVM")
       return res.json()
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await clearApiCache()
       queryClient.invalidateQueries({ queryKey: ["rvm-units"] })
       toast({
         title: "Başarılı",
@@ -217,7 +220,8 @@ export default function RvmPage() {
       if (!res.ok) throw new Error("Failed to delete RVM")
       return res.json()
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await clearApiCache()
       queryClient.invalidateQueries({ queryKey: ["rvm-units"] })
       toast({
         title: "Başarılı",
@@ -245,7 +249,8 @@ export default function RvmPage() {
       if (!res.ok) throw new Error("Failed to update RVM")
       return res.json()
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await clearApiCache()
       queryClient.invalidateQueries({ queryKey: ["rvm-units"] })
       queryClient.invalidateQueries({ queryKey: ["rvm-filters"] })
       toast({
@@ -278,7 +283,8 @@ export default function RvmPage() {
       if (!res.ok) throw new Error("Failed to assign DIM-DB")
       return res.json()
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await clearApiCache()
       queryClient.invalidateQueries({ queryKey: ["rvm-units"] })
       queryClient.invalidateQueries({ queryKey: ["dimdb-list"] })
       toast({
@@ -312,7 +318,8 @@ export default function RvmPage() {
       }
       return res.json()
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await clearApiCache()
       queryClient.invalidateQueries({ queryKey: ["rvm-units"] })
       queryClient.invalidateQueries({ queryKey: ["routers"] })
       toast({
@@ -343,7 +350,8 @@ export default function RvmPage() {
       if (!res.ok) throw new Error("Failed to remove router")
       return res.json()
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await clearApiCache()
       queryClient.invalidateQueries({ queryKey: ["rvm-units"] })
       queryClient.invalidateQueries({ queryKey: ["routers"] })
       toast({
@@ -382,7 +390,8 @@ export default function RvmPage() {
       }
       return res.json()
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await clearApiCache()
       queryClient.invalidateQueries({ queryKey: ["rvm-units"] })
       queryClient.invalidateQueries({ queryKey: ["routers"] })
       toast({
@@ -536,6 +545,12 @@ export default function RvmPage() {
         description="RVM birimlerini ve bağlı router'ları görüntüleyin"
       >
         <div className="flex gap-2">
+          <RefreshButton
+            onClick={() => refetch()}
+            isLoading={isLoading}
+            isFetching={isFetching}
+            dataUpdatedAt={dataUpdatedAt}
+          />
           <Button variant="outline" onClick={handleExport} disabled={!filteredRvmUnits || filteredRvmUnits.length === 0}>
             <Download className="mr-2 h-4 w-4" />
             Excel Export
