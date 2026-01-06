@@ -1,0 +1,48 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Build outputs
+.next
+out
+dist
+build
+
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Testing
+coverage
+.nyc_output
+playwright-report
+test-results
+
+# Environment files (will be set in Coolify)
+.env
+.env.local
+.env.development
+.env.production
+
+# Documentation
+README.md
+CHANGELOG.md
+docs
+
+# Misc
+*.md
+LICENSE
