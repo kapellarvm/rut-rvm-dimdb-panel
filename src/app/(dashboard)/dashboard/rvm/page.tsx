@@ -1119,14 +1119,14 @@ export default function RvmPage() {
                                           />
                                         </div>
                                         <div className="relative flex-1">
-                                          <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-base">
-                                            📱
+                                          <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-medium text-[var(--muted-foreground)]">
+                                            +90
                                           </div>
                                           <Input
                                             value={assignSimCardPhone}
                                             onChange={(e) => setAssignSimCardPhone(e.target.value)}
-                                            placeholder="SIM Tel No"
-                                            className="h-8 pl-9 text-sm"
+                                            placeholder="5XX XXX XX XX"
+                                            className="h-8 pl-10 text-sm"
                                           />
                                         </div>
                                       </div>
@@ -1172,14 +1172,17 @@ export default function RvmPage() {
                                       }}
                                       className="gap-2"
                                     >
-                                      <Image
-                                        src="/icons/dim-db2.png"
-                                        alt="DIM-DB"
-                                        width={20}
-                                        height={20}
-                                        className="object-contain"
-                                      />
-                                      {(router.dimDb || router.simCard) ? "Düzenle" : "Ata"}
+                                      {(router.dimDb || router.simCard) ? (
+                                        <>
+                                          <Edit className="h-4 w-4" />
+                                          Düzenle
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Link2 className="h-4 w-4" />
+                                          Ata
+                                        </>
+                                      )}
                                     </Button>
                                   )}
                                 </>
