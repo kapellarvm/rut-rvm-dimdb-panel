@@ -57,11 +57,11 @@ import { RefreshButton } from "@/components/shared/refresh-button"
 import { toast } from "@/hooks/use-toast"
 import { clearApiCache } from "@/lib/cache-utils"
 import { formatMacAddress, formatMonth, parseRvmId } from "@/lib/utils"
-import type { RvmUnit, Router as RouterType, DimDb } from "@/types"
+import type { RvmUnit, Router as RouterType, DimDb, SimCard } from "@/types"
 import * as XLSX from "xlsx"
 
 interface RvmWithRouters extends RvmUnit {
-  routers: (RouterType & { dimDb: DimDb | null })[]
+  routers: (RouterType & { dimDb: DimDb | null; simCard: SimCard | null })[]
   _count: { routers: number }
 }
 
@@ -98,6 +98,7 @@ export default function RvmPage() {
   // Quick assign state for routers in RVM detail
   const [assigningRouterId, setAssigningRouterId] = useState<string | null>(null)
   const [assignDimDbCode, setAssignDimDbCode] = useState("")
+  const [assignSimCardPhone, setAssignSimCardPhone] = useState("")
 
   // Router assign state
   const [routerAssignDialogOpen, setRouterAssignDialogOpen] = useState(false)
@@ -282,33 +283,35 @@ export default function RvmPage() {
     },
   })
 
-  // Quick assign DIM-DB to router mutation
-  const assignDimDbMutation = useMutation({
-    mutationFn: async ({ routerId, dimDbCode }: { routerId: string; dimDbCode: string }) => {
+  // Quick assign DIM-DB and SIM Card to router mutation
+  const quickAssignMutation = useMutation({
+    mutationFn: async ({ routerId, dimDbCode, simCardPhone }: { routerId: string; dimDbCode?: string; simCardPhone?: string }) => {
       const res = await fetch(`/api/routers/${routerId}/quick-assign`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dimDbCode }),
+        body: JSON.stringify({ dimDbCode, simCardPhone }),
       })
-      if (!res.ok) throw new Error("Failed to assign DIM-DB")
+      if (!res.ok) throw new Error("Failed to assign")
       return res.json()
     },
     onSuccess: async () => {
       await clearApiCache()
       queryClient.invalidateQueries({ queryKey: ["rvm-units"] })
       queryClient.invalidateQueries({ queryKey: ["dimdb-list"] })
+      queryClient.invalidateQueries({ queryKey: ["simcard-list"] })
       toast({
         title: "Başarılı",
-        description: "DIM-DB ataması yapıldı.",
+        description: "Atama yapıldı.",
         variant: "success",
       })
       setAssigningRouterId(null)
       setAssignDimDbCode("")
+      setAssignSimCardPhone("")
     },
     onError: () => {
       toast({
         title: "Hata",
-        description: "DIM-DB ataması başarısız oldu.",
+        description: "Atama başarısız oldu.",
         variant: "destructive",
       })
     },
@@ -985,8 +988,8 @@ export default function RvmPage() {
                                   <Image
                                     src="/icons/dim-db2.png"
                                     alt="DIM-DB"
-                                    width={20}
-                                    height={20}
+                                    width={18}
+                                    height={18}
                                     className="object-contain"
                                   />
                                   {router.dimDb.dimDbCode}
@@ -996,11 +999,22 @@ export default function RvmPage() {
                                   <Image
                                     src="/icons/dim-db2.png"
                                     alt="DIM-DB"
-                                    width={20}
-                                    height={20}
+                                    width={18}
+                                    height={18}
                                     className="object-contain opacity-70"
                                   />
-                                  Atanmamış
+                                  DIM-DB Yok
+                                </Badge>
+                              )}
+                              {router.simCard ? (
+                                <Badge variant="success" className="flex items-center gap-1 py-1">
+                                  <span className="text-sm">📱</span>
+                                  {router.simCard.phoneNumber}
+                                </Badge>
+                              ) : (
+                                <Badge variant="secondary" className="flex items-center gap-1 py-1 opacity-60">
+                                  <span className="text-sm">📱</span>
+                                  SIM Yok
                                 </Badge>
                               )}
                             </div>
@@ -1081,54 +1095,71 @@ export default function RvmPage() {
                                 </Button>
                               )}
 
-                              {/* DIM-DB Assign/Change Button */}
+                              {/* DIM-DB & SIM Card Assign/Change */}
                               {isAdmin && (
                                 <>
                                   {assigningRouterId === router.id ? (
-                                    <div className="flex items-center gap-2 flex-1 min-w-[200px]">
-                                      <div className="relative flex-1">
-                                        <div className="absolute left-2.5 top-1/2 -translate-y-1/2">
-                                          <Image
-                                            src="/icons/dim-db2.png"
-                                            alt="DIM-DB"
-                                            width={22}
-                                            height={22}
-                                            className="object-contain opacity-70"
+                                    <div className="flex flex-col gap-2 flex-1 min-w-[280px]">
+                                      <div className="flex items-center gap-2">
+                                        <div className="relative flex-1">
+                                          <div className="absolute left-2.5 top-1/2 -translate-y-1/2">
+                                            <Image
+                                              src="/icons/dim-db2.png"
+                                              alt="DIM-DB"
+                                              width={20}
+                                              height={20}
+                                              className="object-contain opacity-70"
+                                            />
+                                          </div>
+                                          <Input
+                                            value={assignDimDbCode}
+                                            onChange={(e) => setAssignDimDbCode(e.target.value)}
+                                            placeholder="DIM-DB Kodu"
+                                            className="h-8 pl-9 text-sm"
                                           />
                                         </div>
-                                        <Input
-                                          value={assignDimDbCode}
-                                          onChange={(e) => setAssignDimDbCode(e.target.value)}
-                                          placeholder="DIM-DB Kodu"
-                                          className="h-9 pl-10 text-sm"
-                                        />
+                                        <div className="relative flex-1">
+                                          <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-base">
+                                            📱
+                                          </div>
+                                          <Input
+                                            value={assignSimCardPhone}
+                                            onChange={(e) => setAssignSimCardPhone(e.target.value)}
+                                            placeholder="SIM Tel No"
+                                            className="h-8 pl-9 text-sm"
+                                          />
+                                        </div>
                                       </div>
-                                      <Button
-                                        size="sm"
-                                        className="h-8"
-                                        onClick={() => {
-                                          if (assignDimDbCode) {
-                                            assignDimDbMutation.mutate({
-                                              routerId: router.id,
-                                              dimDbCode: assignDimDbCode,
-                                            })
-                                          }
-                                        }}
-                                        disabled={!assignDimDbCode || assignDimDbMutation.isPending}
-                                      >
-                                        {assignDimDbMutation.isPending ? "..." : router.dimDb ? "Değiştir" : "Ata"}
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        className="h-8"
-                                        onClick={() => {
-                                          setAssigningRouterId(null)
-                                          setAssignDimDbCode("")
-                                        }}
-                                      >
-                                        <X className="h-4 w-4" />
-                                      </Button>
+                                      <div className="flex items-center gap-2">
+                                        <Button
+                                          size="sm"
+                                          className="h-7 flex-1"
+                                          onClick={() => {
+                                            if (assignDimDbCode || assignSimCardPhone) {
+                                              quickAssignMutation.mutate({
+                                                routerId: router.id,
+                                                dimDbCode: assignDimDbCode || undefined,
+                                                simCardPhone: assignSimCardPhone || undefined,
+                                              })
+                                            }
+                                          }}
+                                          disabled={(!assignDimDbCode && !assignSimCardPhone) || quickAssignMutation.isPending}
+                                        >
+                                          {quickAssignMutation.isPending ? "..." : "Kaydet"}
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          className="h-7"
+                                          onClick={() => {
+                                            setAssigningRouterId(null)
+                                            setAssignDimDbCode("")
+                                            setAssignSimCardPhone("")
+                                          }}
+                                        >
+                                          <X className="h-4 w-4" />
+                                        </Button>
+                                      </div>
                                     </div>
                                   ) : (
                                     <Button
@@ -1136,19 +1167,19 @@ export default function RvmPage() {
                                       size="sm"
                                       onClick={() => {
                                         setAssigningRouterId(router.id)
-                                        // Pre-fill with current DIM-DB code if exists
                                         setAssignDimDbCode(router.dimDb?.dimDbCode || "")
+                                        setAssignSimCardPhone(router.simCard?.phoneNumber || "")
                                       }}
                                       className="gap-2"
                                     >
                                       <Image
                                         src="/icons/dim-db2.png"
                                         alt="DIM-DB"
-                                        width={22}
-                                        height={22}
+                                        width={20}
+                                        height={20}
                                         className="object-contain"
                                       />
-                                      {router.dimDb ? "DIM-DB Değiştir" : "DIM-DB Ata"}
+                                      {(router.dimDb || router.simCard) ? "Düzenle" : "Ata"}
                                     </Button>
                                   )}
                                 </>

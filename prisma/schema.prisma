@@ -21,6 +21,11 @@ enum DimDbStatus {
   ASSIGNED
 }
 
+enum SimCardStatus {
+  AVAILABLE
+  ASSIGNED
+}
+
 model User {
   id           String    @id @default(cuid())
   email        String    @unique
@@ -57,6 +62,9 @@ model Router {
   dimDb   DimDb?  @relation(fields: [dimDbId], references: [id])
   dimDbId String? @map("dimdb_id")
 
+  simCard   SimCard? @relation(fields: [simCardId], references: [id])
+  simCardId String?  @map("sim_card_id")
+
   @@map("routers")
 }
 
@@ -84,6 +92,18 @@ model DimDb {
   routers Router[]
 
   @@map("dimdb_list")
+}
+
+model SimCard {
+  id          String        @id @default(cuid())
+  phoneNumber String        @unique @map("phone_number")
+  status      SimCardStatus @default(AVAILABLE)
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  routers Router[]
+
+  @@map("sim_cards")
 }
 
 model ActivityLog {
