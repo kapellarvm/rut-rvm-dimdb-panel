@@ -1081,8 +1081,8 @@ export default function RvmPage() {
                                 </Button>
                               )}
 
-                              {/* DIM-DB Assign Button - only show if not assigned */}
-                              {isAdmin && !router.dimDb && (
+                              {/* DIM-DB Assign/Change Button */}
+                              {isAdmin && (
                                 <>
                                   {assigningRouterId === router.id ? (
                                     <div className="flex items-center gap-2 flex-1 min-w-[200px]">
@@ -1116,7 +1116,7 @@ export default function RvmPage() {
                                         }}
                                         disabled={!assignDimDbCode || assignDimDbMutation.isPending}
                                       >
-                                        {assignDimDbMutation.isPending ? "..." : "Ata"}
+                                        {assignDimDbMutation.isPending ? "..." : router.dimDb ? "Değiştir" : "Ata"}
                                       </Button>
                                       <Button
                                         size="sm"
@@ -1134,7 +1134,11 @@ export default function RvmPage() {
                                     <Button
                                       variant="outline"
                                       size="sm"
-                                      onClick={() => setAssigningRouterId(router.id)}
+                                      onClick={() => {
+                                        setAssigningRouterId(router.id)
+                                        // Pre-fill with current DIM-DB code if exists
+                                        setAssignDimDbCode(router.dimDb?.dimDbCode || "")
+                                      }}
                                       className="gap-2"
                                     >
                                       <Image
@@ -1144,7 +1148,7 @@ export default function RvmPage() {
                                         height={22}
                                         className="object-contain"
                                       />
-                                      DIM-DB Ata
+                                      {router.dimDb ? "DIM-DB Değiştir" : "DIM-DB Ata"}
                                     </Button>
                                   )}
                                 </>
