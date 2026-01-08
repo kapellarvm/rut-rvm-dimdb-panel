@@ -14,7 +14,7 @@ export async function POST(
 
     const { id } = await params
     const body = await request.json()
-    const { rvmId, dimDbCode } = body
+    const { rvmId, dimDbCode, simCardPhone } = body
 
     // Check if router exists
     const router = await prisma.router.findUnique({
@@ -27,7 +27,8 @@ export async function POST(
 
     let rvmUnitId: string | null = null
     let dimDbId: string | null = null
-    const created: { rvm?: string; dimDb?: string } = {}
+    let simCardId: string | null = null
+    const created: { rvm?: string; dimDb?: string; simCard?: string } = {}
 
     // Handle RVM
     if (rvmId && rvmId.trim()) {
@@ -81,8 +82,37 @@ export async function POST(
       dimDbId = dimDb.id
     }
 
+    // Handle SIM Card
+    if (simCardPhone && simCardPhone.trim()) {
+      const normalizedPhone = simCardPhone.trim().replace(/\s+/g, "")
+
+      // Check if SIM Card exists
+      let simCard = await prisma.simCard.findUnique({
+        where: { phoneNumber: normalizedPhone },
+      })
+
+      // Create if doesn't exist
+      if (!simCard) {
+        simCard = await prisma.simCard.create({
+          data: {
+            phoneNumber: normalizedPhone,
+            status: "ASSIGNED",
+          },
+        })
+        created.simCard = normalizedPhone
+      } else {
+        // Update status to ASSIGNED
+        await prisma.simCard.update({
+          where: { id: simCard.id },
+          data: { status: "ASSIGNED" },
+        })
+      }
+
+      simCardId = simCard.id
+    }
+
     // Build update data - only include fields that were provided
-    const updateData: { rvmUnitId?: string | null; dimDbId?: string | null } = {}
+    const updateData: { rvmUnitId?: string | null; dimDbId?: string | null; simCardId?: string | null } = {}
 
     // Only update rvmUnitId if rvmId was explicitly provided in the request
     if (rvmId !== undefined) {
@@ -94,6 +124,11 @@ export async function POST(
       updateData.dimDbId = dimDbId
     }
 
+    // Only update simCardId if simCardPhone was explicitly provided in the request
+    if (simCardPhone !== undefined) {
+      updateData.simCardId = simCardId
+    }
+
     // Update router with new assignments
     const updatedRouter = await prisma.router.update({
       where: { id },
@@ -101,6 +136,7 @@ export async function POST(
       include: {
         rvmUnit: true,
         dimDb: true,
+        simCard: true,
       },
     })
 
@@ -122,6 +158,24 @@ export async function POST(
       }
     }
 
+    // If previous SIM Card was assigned and now changed/unassigned, update its status
+    if (simCardPhone !== undefined && router.simCardId && router.simCardId !== simCardId) {
+      // Check if any other router uses this SIM Card
+      const otherRouters = await prisma.router.count({
+        where: {
+          simCardId: router.simCardId,
+          id: { not: id },
+        },
+      })
+
+      if (otherRouters === 0) {
+        await prisma.simCard.update({
+          where: { id: router.simCardId },
+          data: { status: "AVAILABLE" },
+        })
+      }
+    }
+
     // Log activity
     await prisma.activityLog.create({
       data: {
@@ -132,6 +186,7 @@ export async function POST(
         details: {
           rvmId: rvmId || null,
           dimDbCode: dimDbCode || null,
+          simCardPhone: simCardPhone || null,
           created,
         },
       },

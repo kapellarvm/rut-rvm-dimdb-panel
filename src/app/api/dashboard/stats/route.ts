@@ -14,6 +14,7 @@ export async function GET() {
       totalRouters,
       totalRvmUnits,
       assignedDimDb,
+      assignedSimCard,
       unassignedRouters,
       recentActivity,
     ] = await Promise.all([
@@ -22,6 +23,11 @@ export async function GET() {
       prisma.router.count({
         where: {
           dimDbId: { not: null },
+        },
+      }),
+      prisma.router.count({
+        where: {
+          simCardId: { not: null },
         },
       }),
       prisma.router.count({
@@ -44,6 +50,7 @@ export async function GET() {
       totalRouters,
       totalRvmUnits,
       assignedDimDb,
+      assignedSimCard,
       unassignedRouters,
       recentActivity,
     })

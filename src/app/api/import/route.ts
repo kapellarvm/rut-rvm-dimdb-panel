@@ -67,11 +67,17 @@ export async function POST(request: NextRequest) {
     })
     const rvmMap = new Map(existingRvmUnits.map((r) => [r.rvmId, r.id]))
 
+    const existingSimCards = await prisma.simCard.findMany({
+      select: { phoneNumber: true, id: true },
+    })
+    const simCardMap = new Map(existingSimCards.map((s) => [s.phoneNumber, s.id]))
+
     let newCount = 0
     let updatedCount = 0
     let errorCount = 0
     const errors: { row: number; message: string }[] = []
     const createdRvmUnits: string[] = []
+    const createdSimCards: string[] = []
 
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i]
@@ -126,6 +132,25 @@ export async function POST(request: NextRequest) {
           }
         }
 
+        // Handle SIM Card
+        let simCardId: string | undefined
+        if (cleanedData.simCardPhone) {
+          const normalizedPhone = cleanedData.simCardPhone.replace(/\s+/g, "")
+          if (simCardMap.has(normalizedPhone)) {
+            simCardId = simCardMap.get(normalizedPhone)
+          } else {
+            const newSimCard = await prisma.simCard.create({
+              data: {
+                phoneNumber: normalizedPhone,
+                status: "ASSIGNED",
+              },
+            })
+            simCardMap.set(normalizedPhone, newSimCard.id)
+            simCardId = newSimCard.id
+            createdSimCards.push(normalizedPhone)
+          }
+        }
+
         // Check if exists
         const existingId =
           (cleanedData.serialNumber && serialMap.get(cleanedData.serialNumber)) ||
@@ -146,6 +171,7 @@ export async function POST(request: NextRequest) {
               wifiPassword: cleanedData.wifiPassword,
               devicePassword: cleanedData.devicePassword,
               rvmUnitId,
+              simCardId,
             },
           })
           updatedCount++
@@ -172,6 +198,7 @@ export async function POST(request: NextRequest) {
               wifiPassword: cleanedData.wifiPassword,
               devicePassword: cleanedData.devicePassword,
               rvmUnitId,
+              simCardId,
             },
           })
 
@@ -201,6 +228,7 @@ export async function POST(request: NextRequest) {
           updatedCount,
           errorCount,
           createdRvmUnits,
+          createdSimCards,
         },
       },
     })
@@ -213,6 +241,7 @@ export async function POST(request: NextRequest) {
       errorCount,
       errors: errors.slice(0, 20), // Limit errors in response
       createdRvmUnits,
+      createdSimCards,
       columnMappings: columnMatches,
     })
   } catch (error) {

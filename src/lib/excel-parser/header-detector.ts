@@ -106,6 +106,15 @@ const FIELD_PATTERNS: FieldPattern[] = [
     ],
     weight: 1.0,
   },
+  {
+    field: 'simCardPhone',
+    patterns: [
+      'sim', 'sim kart', 'simcard', 'sim card', 'telefon', 'telefon no', 'tel no',
+      'phone', 'phone number', 'gsm', 'gsm no', 'cep', 'cep no', 'mobile',
+      'mobile number', 'sim tel', 'sim telefon', 'hat', 'hat no', 'numara'
+    ],
+    weight: 1.0,
+  },
 ]
 
 class HeaderDetector {

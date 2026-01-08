@@ -1,6 +1,6 @@
-import { UserRole, DimDbStatus } from '@prisma/client'
+import { UserRole, DimDbStatus, SimCardStatus } from '@prisma/client'
 
-export type { UserRole, DimDbStatus }
+export type { UserRole, DimDbStatus, SimCardStatus }
 
 export interface User {
   id: string
@@ -25,11 +25,13 @@ export interface Router {
   devicePassword: string | null
   rvmUnitId: string | null
   dimDbId: string | null
+  simCardId: string | null
   createdAt: Date
   updatedAt: Date
   importedAt: Date
   rvmUnit?: RvmUnit | null
   dimDb?: DimDb | null
+  simCard?: SimCard | null
 }
 
 export interface RvmUnit {
@@ -50,6 +52,18 @@ export interface DimDb {
   dimDbCode: string
   description: string | null
   status: DimDbStatus
+  createdAt: Date
+  updatedAt: Date
+  routers?: Router[]
+  _count?: {
+    routers: number
+  }
+}
+
+export interface SimCard {
+  id: string
+  phoneNumber: string
+  status: SimCardStatus
   createdAt: Date
   updatedAt: Date
   routers?: Router[]
@@ -111,6 +125,7 @@ export interface ParsedRouterRow {
   devicePassword?: string
   rvmId?: string
   dimDbId?: string
+  simCardPhone?: string
 }
 
 export interface ColumnMapping {

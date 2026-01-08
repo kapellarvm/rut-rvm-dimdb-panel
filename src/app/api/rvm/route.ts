@@ -40,6 +40,7 @@ export async function GET(request: NextRequest) {
             routers: {
               include: {
                 dimDb: true,
+                simCard: true,
               },
             },
             _count: {
