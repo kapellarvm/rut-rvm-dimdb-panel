@@ -16,6 +16,7 @@ import {
   Key,
   Loader2,
   Activity,
+  Smartphone,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -56,6 +57,7 @@ const navigation: NavItem[] = [
   { name: "Router'lar", href: "/dashboard/routers", icon: Router },
   { name: "RVM Birimleri", href: "/dashboard/rvm", image: "/icons/rvm.png" },
   { name: "DIM-DB", href: "/dashboard/dimdb", image: "/icons/dim-db2.png" },
+  { name: "SIM Kartlar", href: "/dashboard/simcard", icon: Smartphone },
   { name: "Excel Import", href: "/dashboard/import", icon: FileUp },
   { name: "Aktiviteler", href: "/dashboard/activities", icon: Activity },
 ]
