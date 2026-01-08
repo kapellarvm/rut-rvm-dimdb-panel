@@ -58,8 +58,16 @@ import { toast } from "@/hooks/use-toast"
 import { clearApiCache } from "@/lib/cache-utils"
 import type { DimDb } from "@/types"
 
-interface DimDbWithCount extends DimDb {
+interface DimDbWithCount extends Omit<DimDb, 'routers'> {
   _count: { routers: number }
+  routers?: {
+    id: string
+    serialNumber: string
+    rvmUnit?: {
+      id: string
+      rvmId: string
+    } | null
+  }[]
 }
 
 export default function DimDbPage() {
@@ -374,7 +382,7 @@ export default function DimDbPage() {
               <TableHead>DIM-DB Kodu</TableHead>
               <TableHead>Açıklama</TableHead>
               <TableHead>Durum</TableHead>
-              <TableHead>Atanan Router</TableHead>
+              <TableHead>Atanan RVM</TableHead>
               <TableHead className="w-[80px]"></TableHead>
             </TableRow>
           </TableHeader>
@@ -419,8 +427,10 @@ export default function DimDbPage() {
                     )}
                   </TableCell>
                   <TableCell>
-                    {dimDb._count.routers > 0 ? (
-                      <span>{dimDb._count.routers} router</span>
+                    {dimDb.routers?.[0]?.rvmUnit ? (
+                      <span className="font-mono font-medium text-[var(--primary)]">
+                        {dimDb.routers[0].rvmUnit.rvmId}
+                      </span>
                     ) : (
                       <span className="text-[var(--muted-foreground)]">-</span>
                     )}

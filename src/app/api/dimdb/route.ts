@@ -40,6 +40,17 @@ export async function GET(request: NextRequest) {
         _count: {
           select: { routers: true },
         },
+        routers: {
+          include: {
+            rvmUnit: {
+              select: {
+                id: true,
+                rvmId: true,
+              },
+            },
+          },
+          take: 1,
+        },
       },
       orderBy: { dimDbCode: "asc" },
     })
