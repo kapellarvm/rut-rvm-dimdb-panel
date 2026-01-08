@@ -22,6 +22,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Server,
+  Smartphone,
 } from "lucide-react"
 import { PageHeader } from "@/components/shared/page-header"
 import { Button } from "@/components/ui/button"
@@ -81,6 +82,7 @@ export default function RvmPage() {
   const [year, setYear] = useState("")
   const [month, setMonth] = useState("")
   const [dimDbStatus, setDimDbStatus] = useState("")
+  const [simCardStatus, setSimCardStatus] = useState("")
   const [selectedRvm, setSelectedRvm] = useState<RvmWithRouters | null>(null)
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
@@ -143,7 +145,7 @@ export default function RvmPage() {
     },
   })
 
-  const hasActiveFilters = effectiveMachineClass || effectiveYear || effectiveMonth || dimDbStatus
+  const hasActiveFilters = effectiveMachineClass || effectiveYear || effectiveMonth || dimDbStatus || simCardStatus
 
   // Keep selectedRvm in sync with latest data from query
   useEffect(() => {
@@ -160,24 +162,36 @@ export default function RvmPage() {
     setYear("")
     setMonth("")
     setDimDbStatus("")
+    setSimCardStatus("")
     setCurrentPage(1)
   }
 
-  // Filter RVM units by DIM-DB status (client-side)
+  // Filter RVM units by DIM-DB and SIM card status (client-side)
   const filteredRvmUnits = rvmUnits?.filter((rvm) => {
-    if (!dimDbStatus) return true
+    // DIM-DB filter
+    if (dimDbStatus) {
+      const hasUnassignedDimDb = rvm.routers.some((r) => !r.dimDb)
 
-    const hasUnassignedRouters = rvm.routers.some((r) => !r.dimDb)
-    const hasAssignedRouters = rvm.routers.some((r) => r.dimDb)
+      if (dimDbStatus === "unassigned" && !hasUnassignedDimDb) {
+        return false
+      }
+      if (dimDbStatus === "assigned" && (rvm.routers.length === 0 || hasUnassignedDimDb)) {
+        return false
+      }
+    }
 
-    if (dimDbStatus === "unassigned") {
-      // Show RVMs that have at least one router without DIM-DB
-      return hasUnassignedRouters
+    // SIM card filter
+    if (simCardStatus) {
+      const hasUnassignedSim = rvm.routers.some((r) => !r.simCard)
+
+      if (simCardStatus === "unassigned" && !hasUnassignedSim) {
+        return false
+      }
+      if (simCardStatus === "assigned" && (rvm.routers.length === 0 || hasUnassignedSim)) {
+        return false
+      }
     }
-    if (dimDbStatus === "assigned") {
-      // Show RVMs where all routers have DIM-DB
-      return rvm.routers.length > 0 && !hasUnassignedRouters
-    }
+
     return true
   })
 
@@ -651,6 +665,17 @@ export default function RvmPage() {
                   <SelectItem value="assigned">DIM-DB Tam</SelectItem>
                 </SelectContent>
               </Select>
+
+              <Select value={simCardStatus} onValueChange={setSimCardStatus}>
+                <SelectTrigger className="w-full sm:w-[140px]">
+                  <SelectValue placeholder="SIM Durumu" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Tümü</SelectItem>
+                  <SelectItem value="unassigned">SIM Eksik</SelectItem>
+                  <SelectItem value="assigned">SIM Tam</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {hasActiveFilters && (
@@ -682,6 +707,11 @@ export default function RvmPage() {
               {dimDbStatus && (
                 <Badge variant={dimDbStatus === "unassigned" ? "warning" : "success"}>
                   {dimDbStatus === "unassigned" ? "DIM-DB Eksik" : "DIM-DB Tam"}
+                </Badge>
+              )}
+              {simCardStatus && (
+                <Badge variant={simCardStatus === "unassigned" ? "outline" : "success"}>
+                  {simCardStatus === "unassigned" ? "SIM Eksik" : "SIM Tam"}
                 </Badge>
               )}
             </div>
@@ -793,10 +823,18 @@ export default function RvmPage() {
                   }
                   return null
                 })()}
-                <div className="flex items-center gap-4 text-sm">
+                <div className="flex flex-wrap items-center gap-3 text-sm">
                   <div className="flex items-center gap-1 text-[var(--muted-foreground)]">
                     <Router className="h-4 w-4" />
-                    <span>{rvm._count.routers} router</span>
+                    <span>{rvm._count.routers} Router</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-[var(--muted-foreground)]">
+                    <Database className="h-4 w-4" />
+                    <span>{rvm.routers.filter((r) => r.dimDb).length} DIM-DB</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-[var(--muted-foreground)]">
+                    <Smartphone className="h-4 w-4" />
+                    <span>{rvm.routers.filter((r) => r.simCard).length} SIM</span>
                   </div>
                   {rvm.location && (
                     <div className="flex items-center gap-1 text-[var(--muted-foreground)]">
@@ -805,15 +843,19 @@ export default function RvmPage() {
                     </div>
                   )}
                 </div>
-                <div className="mt-3 flex gap-2">
-                  {rvm.routers.filter((r) => r.dimDb).length > 0 && (
-                    <Badge variant="success">
-                      {rvm.routers.filter((r) => r.dimDb).length} atanmış
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {rvm.routers.filter((r) => r.dimDb).length === rvm._count.routers && rvm._count.routers > 0 ? (
+                    <Badge variant="success">Tüm DIM-DB atandı</Badge>
+                  ) : rvm.routers.filter((r) => !r.dimDb).length > 0 && (
+                    <Badge variant="warning">
+                      {rvm.routers.filter((r) => !r.dimDb).length} DIM-DB bekliyor
                     </Badge>
                   )}
-                  {rvm.routers.filter((r) => !r.dimDb).length > 0 && (
-                    <Badge variant="warning">
-                      {rvm.routers.filter((r) => !r.dimDb).length} bekleyen
+                  {rvm.routers.filter((r) => r.simCard).length === rvm._count.routers && rvm._count.routers > 0 ? (
+                    <Badge variant="success">Tüm SIM atandı</Badge>
+                  ) : rvm.routers.filter((r) => !r.simCard).length > 0 && (
+                    <Badge variant="outline">
+                      {rvm.routers.filter((r) => !r.simCard).length} SIM bekliyor
                     </Badge>
                   )}
                 </div>
@@ -1119,14 +1161,18 @@ export default function RvmPage() {
                                           />
                                         </div>
                                         <div className="relative flex-1">
-                                          <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-base">
-                                            📱
+                                          <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-medium text-[var(--muted-foreground)]">
+                                            +90
                                           </div>
                                           <Input
                                             value={assignSimCardPhone}
-                                            onChange={(e) => setAssignSimCardPhone(e.target.value)}
-                                            placeholder="SIM Tel No"
-                                            className="h-8 pl-9 text-sm"
+                                            onChange={(e) => {
+                                              const val = e.target.value.replace(/\D/g, "").slice(0, 10)
+                                              setAssignSimCardPhone(val)
+                                            }}
+                                            placeholder="5XX XXX XX XX"
+                                            className="h-8 pl-10 text-sm"
+                                            maxLength={10}
                                           />
                                         </div>
                                       </div>
@@ -1172,14 +1218,17 @@ export default function RvmPage() {
                                       }}
                                       className="gap-2"
                                     >
-                                      <Image
-                                        src="/icons/dim-db2.png"
-                                        alt="DIM-DB"
-                                        width={20}
-                                        height={20}
-                                        className="object-contain"
-                                      />
-                                      {(router.dimDb || router.simCard) ? "Düzenle" : "Ata"}
+                                      {(router.dimDb || router.simCard) ? (
+                                        <>
+                                          <Edit className="h-4 w-4" />
+                                          Düzenle
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Link2 className="h-4 w-4" />
+                                          Ata
+                                        </>
+                                      )}
                                     </Button>
                                   )}
                                 </>

@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
     const rvmUnitId = searchParams.get("rvmUnitId")
     const rvmStatus = searchParams.get("rvmStatus")
     const dimDbStatus = searchParams.get("dimDbStatus")
+    const simCardStatus = searchParams.get("simCardStatus")
     const sortField = searchParams.get("sortField") || "createdAt"
     const sortDir = searchParams.get("sortDir") || "desc"
 
@@ -64,12 +65,20 @@ export async function GET(request: NextRequest) {
       where.dimDbId = null
     }
 
+    // SIM card status filter
+    if (simCardStatus === "assigned") {
+      where.simCardId = { not: null }
+    } else if (simCardStatus === "unassigned") {
+      where.simCardId = null
+    }
+
     const [routers, total] = await Promise.all([
       prisma.router.findMany({
         where,
         include: {
           rvmUnit: true,
           dimDb: true,
+          simCard: true,
         },
         orderBy: { [sortField]: sortDir },
         skip: (page - 1) * pageSize,
@@ -111,6 +120,7 @@ export async function POST(request: NextRequest) {
       include: {
         rvmUnit: true,
         dimDb: true,
+        simCard: true,
       },
     })
 

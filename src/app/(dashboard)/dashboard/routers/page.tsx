@@ -13,6 +13,7 @@ import {
   Trash2,
   Eye,
   Wifi,
+  Smartphone,
 } from "lucide-react"
 import { PageHeader } from "@/components/shared/page-header"
 import { Button } from "@/components/ui/button"
@@ -57,10 +58,10 @@ import { clearApiCache } from "@/lib/cache-utils"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "@/hooks/use-toast"
 import { formatMacAddress } from "@/lib/utils"
-import type { Router, RvmUnit, DimDb } from "@/types"
+import type { Router, RvmUnit, DimDb, SimCard } from "@/types"
 
 interface RoutersResponse {
-  data: (Router & { rvmUnit: RvmUnit | null; dimDb: DimDb | null })[]
+  data: (Router & { rvmUnit: RvmUnit | null; dimDb: DimDb | null; simCard: SimCard | null })[]
   pagination: {
     page: number
     pageSize: number
@@ -76,9 +77,10 @@ export default function RoutersPage() {
 
   const [search, setSearch] = useState("")
   const [dimDbStatus, setDimDbStatus] = useState("all")
+  const [simCardStatus, setSimCardStatus] = useState("all")
   const [rvmStatus, setRvmStatus] = useState("all")
   const [page, setPage] = useState(1)
-  const [selectedRouter, setSelectedRouter] = useState<(Router & { rvmUnit?: RvmUnit | null; dimDb?: DimDb | null }) | null>(null)
+  const [selectedRouter, setSelectedRouter] = useState<(Router & { rvmUnit?: RvmUnit | null; dimDb?: DimDb | null; simCard?: SimCard | null }) | null>(null)
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
   const [assignDialogOpen, setAssignDialogOpen] = useState(false)
   const [selectedDimDb, setSelectedDimDb] = useState<string>("")
@@ -97,13 +99,14 @@ export default function RoutersPage() {
 
   // Fetch routers
   const { data: routersData, isLoading, isFetching, dataUpdatedAt, refetch } = useQuery<RoutersResponse>({
-    queryKey: ["routers", search, dimDbStatus, rvmStatus, page],
+    queryKey: ["routers", search, dimDbStatus, simCardStatus, rvmStatus, page],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: page.toString(),
         pageSize: "50",
         search,
         dimDbStatus: dimDbStatus !== "all" ? dimDbStatus : "",
+        simCardStatus: simCardStatus !== "all" ? simCardStatus : "",
         rvmStatus: rvmStatus !== "all" ? rvmStatus : "",
       })
       const res = await fetch(`/api/routers?${params}`)
@@ -400,6 +403,16 @@ export default function RoutersPage() {
                 <SelectItem value="unassigned">DIM-DB: Yok</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={simCardStatus} onValueChange={setSimCardStatus}>
+              <SelectTrigger className="w-full xs:w-[120px]">
+                <SelectValue placeholder="SIM" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">SIM: Tümü</SelectItem>
+                <SelectItem value="assigned">SIM: Var</SelectItem>
+                <SelectItem value="unassigned">SIM: Yok</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </Card>
@@ -432,16 +445,30 @@ export default function RoutersPage() {
                       {router.dimDb ? (
                         <Badge variant="success" className="text-xs">DIM-DB</Badge>
                       ) : (
-                        <Badge variant="warning" className="text-xs">Bekliyor</Badge>
+                        <Badge variant="warning" className="text-xs">DIM-DB Yok</Badge>
+                      )}
+                      {router.simCard ? (
+                        <Badge variant="success" className="text-xs flex items-center gap-1">
+                          <Smartphone className="h-3 w-3" />
+                          SIM
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-xs">SIM Yok</Badge>
                       )}
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 text-xs text-[var(--muted-foreground)]">
+                  <div className="flex items-center gap-3 text-xs text-[var(--muted-foreground)] flex-wrap">
                     {router.ssid && (
                       <span className="flex items-center gap-1">
                         <Wifi className="h-3 w-3" />
                         {router.ssid}
+                      </span>
+                    )}
+                    {router.simCard && (
+                      <span className="flex items-center gap-1">
+                        <Smartphone className="h-3 w-3" />
+                        +90 {router.simCard.phoneNumber}
                       </span>
                     )}
                     {router.rvmUnit && (
@@ -544,6 +571,7 @@ export default function RoutersPage() {
                 <TableHead>Panel</TableHead>
                 <TableHead>RVM</TableHead>
                 <TableHead>DIM-DB</TableHead>
+                <TableHead>SIM</TableHead>
                 <TableHead className="w-[50px]"></TableHead>
               </TableRow>
             </TableHeader>
@@ -551,7 +579,7 @@ export default function RoutersPage() {
               {isLoading ? (
                 [...Array(5)].map((_, i) => (
                   <TableRow key={i}>
-                    {[...Array(7)].map((_, j) => (
+                    {[...Array(8)].map((_, j) => (
                       <TableCell key={j}>
                         <Skeleton className="h-4 w-16" />
                       </TableCell>
@@ -561,7 +589,7 @@ export default function RoutersPage() {
               ) : routersData?.data.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={7}
+                    colSpan={8}
                     className="text-center py-8 text-[var(--muted-foreground)]"
                   >
                     Router bulunamadı
@@ -615,6 +643,18 @@ export default function RoutersPage() {
                         <Badge variant="success" className="text-xs px-1.5 py-0.5">Var</Badge>
                       ) : (
                         <Badge variant="warning" className="text-xs px-1.5 py-0.5">Yok</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {router.simCard ? (
+                        <div className="flex items-center gap-1">
+                          <Badge variant="success" className="text-xs px-1.5 py-0.5 flex items-center gap-1">
+                            <Smartphone className="h-3 w-3" />
+                            {router.simCard.phoneNumber}
+                          </Badge>
+                        </div>
+                      ) : (
+                        <Badge variant="outline" className="text-xs px-1.5 py-0.5">Yok</Badge>
                       )}
                     </TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
@@ -831,6 +871,20 @@ export default function RoutersPage() {
                       192.168.53.10
                       <ExternalLink className="h-3 w-3" />
                     </a>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-[var(--muted-foreground)]">
+                      SIM Kart
+                    </p>
+                    {selectedRouter.simCard ? (
+                      <div className="flex items-center gap-2">
+                        <Smartphone className="h-4 w-4 text-green-500" />
+                        <span className="font-medium">+90 {selectedRouter.simCard.phoneNumber}</span>
+                        <CopyButton value={`+90${selectedRouter.simCard.phoneNumber}`} label="Telefon" />
+                      </div>
+                    ) : (
+                      <Badge variant="outline">Atanmadı</Badge>
+                    )}
                   </div>
                 </div>
 
