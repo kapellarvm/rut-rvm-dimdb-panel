@@ -845,14 +845,14 @@ export default function RvmPage() {
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {rvm.routers.filter((r) => r.dimDb).length === rvm._count.routers && rvm._count.routers > 0 ? (
-                    <Badge variant="success">Tüm DIM-DB atandı</Badge>
+                    <Badge variant="success">DIM-DB atandı</Badge>
                   ) : rvm.routers.filter((r) => !r.dimDb).length > 0 && (
                     <Badge variant="warning">
                       {rvm.routers.filter((r) => !r.dimDb).length} DIM-DB bekliyor
                     </Badge>
                   )}
                   {rvm.routers.filter((r) => r.simCard).length === rvm._count.routers && rvm._count.routers > 0 ? (
-                    <Badge variant="success">Tüm SIM atandı</Badge>
+                    <Badge variant="success">SIM atandı</Badge>
                   ) : rvm.routers.filter((r) => !r.simCard).length > 0 && (
                     <Badge variant="outline">
                       {rvm.routers.filter((r) => !r.simCard).length} SIM bekliyor
